@@ -16,8 +16,22 @@ function init() {
     content.style.display = 'none';
     
     // Initialize Supabase Client
-    supabase = window.supabase.createClient(url, key);
-    loadData();
+    try {
+      if (!window.supabase) {
+        throw new Error("A Supabase könyvtár nem töltődött be (lehet, hogy egy reklámblokkoló megfogta, vagy nincs internet).");
+      }
+      if (!url.startsWith('http')) {
+        throw new Error("A Project URL-nek 'https://'-el kell kezdődnie!");
+      }
+      supabase = window.supabase.createClient(url, key);
+      loadData();
+    } catch (e) {
+      alert("Hiba a csatlakozáskor: " + e.message);
+      configSection.style.display = 'flex';
+      dashboardSection.style.display = 'none';
+      localStorage.removeItem('supa_url');
+      localStorage.removeItem('supa_key');
+    }
   } else {
     configSection.style.display = 'flex';
     dashboardSection.style.display = 'none';
