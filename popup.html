@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OniAnime Tracker</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <span>&#128250; OniAnime Tracker</span>
+    </div>
+
+    <div class="section">
+      <div class="title">JELENLEGI EP&#211;Z&#211;D</div>
+      <div class="row"><span>Anime:</span><span id="animeName" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px;" title="">-</span></div>
+      <div class="row" style="display:none;"><span>Show ID:</span><span id="showId">-</span></div>
+      <div class="row"><span>Epiz&#243;d:</span><span id="episode">-</span></div>
+      <div class="row"><span>Halad&#225;s:</span><span id="progress">-</span></div>
+      <div class="row"><span>Megn&#233;zve:</span><span id="watchStatus">-</span></div>
+      <div class="row"><span>Supabase:</span><span id="syncStatus">-</span></div>
+    </div>
+
+    <div class="section">
+      <div class="title">SUPABASE BE&#193;LL&#205;T&#193;S</div>
+      <input type="text" id="url" placeholder="Project URL (https://xxx.supabase.co)">
+      <input type="password" id="key" placeholder="Anon Key">
+      <button id="save">&#128190; Ment&#233;s</button>
+      <button id="refresh">&#8635; Friss&#237;t&#233;s</button>
+      <div id="msg"></div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

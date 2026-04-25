@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OniAnime Statisztika</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="container">
+    
+    <!-- Config Section (Ha nincs beállítva) -->
+    <div id="config-section" class="panel">
+      <h2>Supabase Csatlakozás</h2>
+      <p style="text-align:center; color:var(--text-secondary); margin-bottom: 20px;">
+        Add meg a Supabase adataidat a statisztikák betöltéséhez!
+      </p>
+      <div class="input-group">
+        <label>Project URL</label>
+        <input type="text" id="config-url" placeholder="https://xxx.supabase.co">
+      </div>
+      <div class="input-group">
+        <label>Anon Key</label>
+        <input type="password" id="config-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+      </div>
+      <button class="btn-primary" id="btn-connect">Csatlakozás</button>
+    </div>
+
+    <!-- Dashboard Section -->
+    <div id="dashboard-section">
+      <div class="header">
+        <h1>OniAnime Statisztikák</h1>
+        <div class="header-controls">
+          <button id="btn-logout">Kijelentkezés</button>
+        </div>
+      </div>
+
+      <div id="loader" class="loader"></div>
+
+      <div id="dashboard-content" style="display:none;">
+        <div class="stats-grid">
+          <div class="panel stat-card">
+            <div class="stat-value" id="stat-total-eps">0</div>
+            <div class="stat-label">Megnézett Epizódok</div>
+          </div>
+          <div class="panel stat-card">
+            <div class="stat-value" id="stat-total-time">0h</div>
+            <div class="stat-label">Összes Idő (kb)</div>
+          </div>
+          <div class="panel stat-card">
+            <div class="stat-value" id="stat-total-shows">0</div>
+            <div class="stat-label">Különböző Animék</div>
+          </div>
+          <div class="panel stat-card">
+            <div class="stat-value" id="stat-this-week">0</div>
+            <div class="stat-label">Ezen a héten (ep)</div>
+          </div>
+        </div>
+
+        <div class="panel data-section">
+          <h3>Legutóbb megnézett epizódok</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Anime Cím</th>
+                <th>Epizód</th>
+                <th>Mikor</th>
+              </tr>
+            </thead>
+            <tbody id="recent-tbody">
+              <!-- JS fills this -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel data-section">
+          <h3>Legtöbbet nézett animék (Befejezett / Folyamatban)</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Anime Cím</th>
+                <th>Megnézett részek</th>
+              </tr>
+            </thead>
+            <tbody id="shows-tbody">
+              <!-- JS fills this -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
