@@ -19,7 +19,7 @@ function init() {
   // If running inside the extension, sync with background script
   let extensionContext = false;
   try {
-    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id && chrome.runtime.sendMessage) {
       extensionContext = true;
       chrome.runtime.sendMessage({ type: 'GET_CONFIG' }, (config) => {
         if (chrome.runtime.lastError) {
@@ -27,8 +27,14 @@ function init() {
           fallbackInit();
           return;
         }
-        const url = config?.url || localStorage.getItem('supa_url');
-        const key = config?.anonKey || localStorage.getItem('supa_key');
+        let url = config?.url || localStorage.getItem('supa_url');
+        let key = config?.anonKey || localStorage.getItem('supa_key');
+        
+        if (isSimplifiedLogin && localStorage.getItem('dashboard_auth') === 'true') {
+          url = CONFIG.SUPABASE_URL;
+          key = CONFIG.SUPABASE_KEY;
+        }
+        
         startDashboard(url, key);
       });
     }
