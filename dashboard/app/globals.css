@@ -2,87 +2,246 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --oni-bg: #0a0908;
-  --oni-surface: #111010;
-  --oni-surface-2: #161514;
-  --oni-border: rgba(255, 255, 255, 0.06);
-  --oni-accent: #ff6b35;
-  --oni-text: #e2e8f0;
-  --oni-dim: #94a3b8;
-  --oni-muted: #475569;
+/* ============================================================
+   TEMA VALTOZOK - 4 tema: dark, win95, ps1, modern
+   ============================================================ */
+
+/* --- DARK (alapertelmezett) --- */
+:root, [data-theme="dark"] {
+  --t-bg: #0a0908;
+  --t-surface: #111010;
+  --t-surface-2: #161514;
+  --t-border: rgba(255,255,255,0.06);
+  --t-accent: #ff6b35;
+  --t-accent-2: #e85d2a;
+  --t-text: #e2e8f0;
+  --t-dim: #94a3b8;
+  --t-muted: #475569;
+  --t-font: 'Inter', sans-serif;
+  --t-radius: 6px;
+  --t-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  --t-header-bg: rgba(10,9,8,0.85);
+  --t-card-bg: rgba(17,16,16,0.9);
+  --t-input-bg: rgba(255,255,255,0.04);
+  --t-scanline: 0;
+  --t-win-border: none;
 }
+
+/* --- WINDOWS 95 --- */
+[data-theme="win95"] {
+  --t-bg: #008080;
+  --t-surface: #c0c0c0;
+  --t-surface-2: #d4d0c8;
+  --t-border: #000000;
+  --t-accent: #000080;
+  --t-accent-2: #1084d0;
+  --t-text: #000000;
+  --t-dim: #444444;
+  --t-muted: #808080;
+  --t-font: 'Courier New', monospace;
+  --t-radius: 0px;
+  --t-shadow: 2px 2px 0 #000, inset 1px 1px 0 #fff, inset -1px -1px 0 #808080;
+  --t-header-bg: #000080;
+  --t-card-bg: #c0c0c0;
+  --t-input-bg: #ffffff;
+  --t-scanline: 0;
+  --t-win-border: 2px solid;
+}
+
+/* --- RETRO PS1 --- */
+[data-theme="ps1"] {
+  --t-bg: #0d0221;
+  --t-surface: #150a35;
+  --t-surface-2: #1e1050;
+  --t-border: rgba(0,255,255,0.25);
+  --t-accent: #00ffff;
+  --t-accent-2: #ff00ff;
+  --t-text: #e0e0ff;
+  --t-dim: #9090cc;
+  --t-muted: #5050aa;
+  --t-font: 'Courier New', monospace;
+  --t-radius: 0px;
+  --t-shadow: 0 0 12px rgba(0,255,255,0.4), 0 0 30px rgba(255,0,255,0.2);
+  --t-header-bg: rgba(13,2,33,0.95);
+  --t-card-bg: rgba(21,10,53,0.9);
+  --t-input-bg: rgba(0,255,255,0.05);
+  --t-scanline: 1;
+  --t-win-border: none;
+}
+
+/* --- MODERN / GLASS --- */
+[data-theme="modern"] {
+  --t-bg: #0f172a;
+  --t-surface: rgba(255,255,255,0.07);
+  --t-surface-2: rgba(255,255,255,0.1);
+  --t-border: rgba(255,255,255,0.15);
+  --t-accent: #6366f1;
+  --t-accent-2: #818cf8;
+  --t-text: #f1f5f9;
+  --t-dim: #94a3b8;
+  --t-muted: #475569;
+  --t-font: 'Inter', sans-serif;
+  --t-radius: 16px;
+  --t-shadow: 0 8px 32px rgba(99,102,241,0.15);
+  --t-header-bg: rgba(15,23,42,0.7);
+  --t-card-bg: rgba(255,255,255,0.07);
+  --t-input-bg: rgba(255,255,255,0.06);
+  --t-scanline: 0;
+  --t-win-border: none;
+}
+
+/* ============================================================
+   ALAP STILUS
+   ============================================================ */
 
 body {
-  background-color: var(--oni-bg);
-  color: var(--oni-text);
-  font-family: var(--font-body, 'Inter', sans-serif);
+  background-color: var(--t-bg);
+  background-image: var(--t-bg-image, none);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  color: var(--t-text);
+  font-family: var(--t-font);
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s, color 0.3s;
 }
 
-/* Glass panel */
+/* Scanlines PS1 temanak */
+[data-theme="ps1"] body::before,
+body.scanlines::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.15) 2px,
+    rgba(0,0,0,0.15) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Win95 ablakkeret stilus */
+[data-theme="win95"] .glass-panel {
+  background: #c0c0c0 !important;
+  border: var(--t-win-border) !important;
+  border-color: #fff #808080 #808080 #fff !important;
+  box-shadow: 1px 1px 0 #000, -1px -1px 0 #dfdfdf, inset 1px 1px 0 #dfdfdf, inset -1px -1px 0 #808080 !important;
+  backdrop-filter: none !important;
+  border-radius: 0 !important;
+}
+
+[data-theme="win95"] .t-header {
+  background: linear-gradient(to right, #000080, #1084d0) !important;
+  color: white !important;
+}
+
+[data-theme="win95"] button {
+  border-radius: 0 !important;
+}
+
+/* Glass panel alap */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--oni-border);
+  background: var(--t-card-bg);
+  border: 1px solid var(--t-border);
   backdrop-filter: blur(12px);
+  border-radius: var(--t-radius);
+  box-shadow: var(--t-shadow);
+  transition: background 0.3s, border 0.3s;
 }
 
-/* Input stílus */
-.input-oni {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: var(--oni-text);
+/* Input alap */
+.input-t {
+  background: var(--t-input-bg);
+  border: 1px solid var(--t-border);
+  color: var(--t-text);
+  border-radius: var(--t-radius);
   transition: border-color 0.2s, box-shadow 0.2s;
   outline: none;
+  font-family: var(--t-font);
+}
+.input-t:focus {
+  border-color: var(--t-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--t-accent) 25%, transparent);
 }
 
-.input-oni:focus {
-  border-color: rgba(255, 107, 53, 0.5);
-  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+/* PS1 glow effekt */
+[data-theme="ps1"] .glow-text {
+  text-shadow: 0 0 8px var(--t-accent), 0 0 20px var(--t-accent);
+}
+[data-theme="ps1"] .glass-panel {
+  box-shadow: 0 0 0 1px var(--t-accent), 0 0 20px rgba(0,255,255,0.15);
 }
 
-.input-oni::placeholder {
-  color: var(--oni-muted);
+/* Modern blur/glow */
+[data-theme="modern"] .glass-panel {
+  backdrop-filter: blur(20px);
+  background: rgba(255,255,255,0.06);
 }
 
-/* Glow szöveg */
+/* Regi oni- stilus aliasok - visszafele kompatibilitas */
+.input-oni { @apply input-t; }
+:root { --oni-accent: var(--t-accent); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--t-surface); }
+::-webkit-scrollbar-thumb { background: var(--t-muted); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--t-accent); }
+
+/* Glow text */
 .glow-text {
-  text-shadow: 0 0 20px rgba(255, 107, 53, 0.3);
+  text-shadow: 0 0 20px color-mix(in srgb, var(--t-accent) 60%, transparent);
 }
 
-/* Dekoráció sarkok */
-.corner-tl::before,
-.corner-br::after {
+/* Animaciok */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.fade-in { animation: fadeIn 0.3s ease; }
+
+@keyframes ps1boot {
+  0% { opacity: 0; transform: scale(0.95); filter: blur(4px); }
+  50% { opacity: 1; transform: scale(1.02); filter: blur(0); }
+  100% { opacity: 1; transform: scale(1); }
+}
+[data-theme="ps1"] .fade-in { animation: ps1boot 0.5s ease; }
+
+/* Win95 titlebar */
+.win95-titlebar {
+  background: linear-gradient(to right, #000080, #1084d0);
+  color: white;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  padding: 3px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #000;
+}
+.win95-btn {
+  background: #c0c0c0;
+  border: 2px solid;
+  border-color: #fff #808080 #808080 #fff;
+  font-size: 11px;
+  padding: 1px 6px;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+}
+.win95-btn:active {
+  border-color: #808080 #fff #fff #808080;
+}
+
+/* Retro CRT border */
+[data-theme="ps1"] .glass-panel::before {
   content: '';
   position: absolute;
-  width: 12px;
-  height: 12px;
-  border-color: var(--oni-accent);
-  border-style: solid;
-  opacity: 0.5;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(0,255,255,0.03) 0%, transparent 50%, rgba(255,0,255,0.03) 100%);
 }
-
-.corner-tl::before {
-  top: -1px;
-  left: -1px;
-  border-width: 1px 0 0 1px;
-}
-
-.corner-br::after {
-  bottom: -1px;
-  right: -1px;
-  border-width: 0 1px 1px 0;
-}
-
-.login-card {
+[data-theme="ps1"] .glass-panel {
   position: relative;
+  overflow: hidden;
 }
-
-/* Tailwind custom colors */
-.text-oni-text { color: var(--oni-text); }
-.text-oni-dim { color: var(--oni-dim); }
-.text-oni-muted { color: var(--oni-muted); }
-.text-oni-accent { color: var(--oni-accent); }
-.border-oni-border { border-color: var(--oni-border); }
-.bg-oni-surface { background-color: var(--oni-surface); }
-.bg-oni-surface-2 { background-color: var(--oni-surface-2); }
