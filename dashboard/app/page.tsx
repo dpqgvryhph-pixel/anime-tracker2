@@ -1,130 +1,77 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
-
-  useEffect(() => { setMounted(true); }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
     try {
-      const res = await fetch('/api/auth', {
+      const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ password }),
       });
-      const data = await res.json();
       if (res.ok) {
         router.push('/dashboard');
       } else {
-        setError(data.error || 'Hibás adatok');
+        setError('Hibás jelszó');
       }
     } catch {
-      setError('Hálózati hiba');
+      setError('Kapcsolati hiba');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 relative">
-      {/* Background glow */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(255,107,53,0.06) 0%, transparent 70%)' }} />
-      </div>
-
-      <div className={`w-full max-w-md transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="glass-panel p-8 rounded-2xl w-full max-w-sm">
         {/* Logo */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded bg-oni-accent flex items-center justify-center text-white font-display text-lg">
-              鬼
-            </div>
-            <span className="font-display text-4xl tracking-widest text-white glow-text">ONIANIME</span>
+        <div className="text-center mb-8">
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4"
+            style={{ background: 'var(--t-accent)' }}
+          >
+            ▶
           </div>
-          <p className="text-oni-dim text-sm tracking-[0.3em] uppercase font-body">Tracker Dashboard</p>
+          <h1 className="font-display text-2xl tracking-widest glow-text" style={{ color: 'var(--t-text)' }}>
+            ANIME TRACKER
+          </h1>
+          <p className="text-xs tracking-[0.2em] uppercase mt-1" style={{ color: 'var(--t-dim)' }}>Belépés</p>
         </div>
 
-        {/* Card */}
-        <div className="glass-panel rounded-lg p-8 relative login-card corner-tl corner-br">
-          <h2 className="font-display text-2xl tracking-widest text-white mb-1">BEJELENTKEZÉS</h2>
-          <p className="text-oni-dim text-xs mb-8 tracking-wider">Csak te férhetsz hozzá az adataidhoz</p>
-
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div>
-              <label className="block text-xs text-oni-dim tracking-[0.2em] uppercase mb-2">
-                Felhasználónév
-              </label>
-              <input
-                type="text"
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-                className="input-oni w-full px-4 py-3 rounded text-oni-text font-body text-sm"
-                placeholder="felhasználónév"
-                required
-                autoFocus
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs text-oni-dim tracking-[0.2em] uppercase mb-2">
-                Jelszó
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="input-oni w-full px-4 py-3 rounded text-oni-text font-body text-sm"
-                placeholder="••••••••"
-                required
-              />
-            </div>
-
-            {error && (
-              <div className="text-center py-2 px-4 rounded text-xs text-red-400 bg-red-400/10 border border-red-400/20">
-                ✗ {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 rounded font-display tracking-widest text-white text-sm transition-all duration-200 relative overflow-hidden"
-              style={{
-                background: loading ? 'rgba(255,107,53,0.4)' : 'linear-gradient(135deg, #ff6b35, #e85d2c)',
-                boxShadow: loading ? 'none' : '0 0 20px rgba(255,107,53,0.3)',
-              }}
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  BETÖLTÉS...
-                </span>
-              ) : 'BELÉPÉS'}
-            </button>
-          </form>
-
-          {/* Bottom decoration */}
-          <div className="mt-8 pt-6 border-t border-oni-border flex justify-between text-xs text-oni-muted">
-            <span>OniAnime Tracker v2.2</span>
-            <span className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              Online
-            </span>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Jelszó..."
+              className="input-oni w-full"
+              autoFocus
+            />
           </div>
-        </div>
+
+          {error && (
+            <p className="text-sm text-center" style={{ color: '#ef4444' }}>{error}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading || !password}
+            className="w-full py-3 rounded-xl font-bold tracking-wider transition-all disabled:opacity-50"
+            style={{ background: 'var(--t-accent)', color: '#fff' }}
+          >
+            {loading ? 'Belépés...' : 'Belépés'}
+          </button>
+        </form>
       </div>
     </div>
   );
