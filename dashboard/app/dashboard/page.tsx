@@ -37,7 +37,7 @@ export default function DashboardPage() {
       const json = await res.json();
       setData(json.data || []);
     } catch (e: unknown) {
-      setError('Hiba a betoltésnél');
+      setError('Hiba a betoltesnél');
     } finally {
       setLoading(false);
     }
@@ -55,9 +55,17 @@ export default function DashboardPage() {
       return new Date(b.last_watched).getTime() - new Date(a.last_watched).getTime();
     });
 
-  const totalEpisodes = data.reduce((s, d) => s + d.watched_count, 0);
-  const totalMinutes = data.reduce((s, d) => s + d.duration_minutes * d.watched_count, 0);
+  const totalEpisodes = data.reduce((s, d) => s + (d.watched_count || 0), 0);
+  const totalMinutes = data.reduce((s, d) => s + ((d.duration_minutes || 0) * (d.watched_count || 0)), 0);
   const totalHours = Math.floor(totalMinutes / 60);
+  const remainingMinutes = totalMinutes % 60;
+
+  const formatWatchTime = () => {
+    if (totalMinutes === 0) return '0p';
+    if (totalHours === 0) return `${remainingMinutes}p`;
+    if (remainingMinutes === 0) return `${totalHours}ó`;
+    return `${totalHours}ó ${remainingMinutes}p`;
+  };
 
   const handleLogout = async () => {
     await fetch('/api/logout', { method: 'POST' });
@@ -68,12 +76,13 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen p-4 md:p-8">
+
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <div className="flex items-center gap-3 mb-1">
             <div
-              className="w-7 h-7 rounded flex items-center justify-center text-white text-sm font-bold"
+              className="w-8 h-8 rounded flex items-center justify-center text-white text-sm font-bold"
               style={{ background: 'var(--t-accent)' }}
             >
               ▶
@@ -82,24 +91,24 @@ export default function DashboardPage() {
           </div>
           <p className="text-xs tracking-[0.25em] uppercase" style={{ color: 'var(--t-dim)' }}>Dashboard</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={loadData}
-            className="glass-panel px-4 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-80"
+            className="glass-panel px-3 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-80"
             style={{ color: 'var(--t-dim)' }}
           >
             ↻ Frissítés
           </button>
           <a
             href="/admin"
-            className="glass-panel px-4 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-80"
+            className="glass-panel px-3 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-80"
             style={{ color: 'var(--t-accent)' }}
           >
             Admin
           </a>
           <button
             onClick={handleLogout}
-            className="glass-panel px-4 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-80"
+            className="glass-panel px-3 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-80"
             style={{ color: 'var(--t-dim)' }}
           >
             Kilépés
@@ -108,33 +117,50 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-        <div className="glass-panel p-4 rounded-xl">
-          <div className="text-3xl font-bold glow-text" style={{ color: 'var(--t-accent)' }}>{data.length}</div>
-          <div className="text-xs uppercase tracking-widest mt-1" style={{ color: 'var(--t-dim)' }}>Anime</div>
+      <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="glass-panel p-5 rounded-xl fade-in">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-2xl">🎬</span>
+            <div className="text-xs uppercase tracking-widest" style={{ color: 'var(--t-dim)' }}>Anime</div>
+          </div>
+          <div className="text-4xl font-bold glow-text" style={{ color: 'var(--t-accent)' }}>{data.length}</div>
+          <div className="mt-2 text-xs" style={{ color: 'var(--t-muted)' }}>sorozat követve</div>
         </div>
-        <div className="glass-panel p-4 rounded-xl">
-          <div className="text-3xl font-bold glow-text" style={{ color: 'var(--t-accent)' }}>{totalEpisodes}</div>
-          <div className="text-xs uppercase tracking-widest mt-1" style={{ color: 'var(--t-dim)' }}>Részek</div>
+
+        <div className="glass-panel p-5 rounded-xl fade-in">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-2xl">📺</span>
+            <div className="text-xs uppercase tracking-widest" style={{ color: 'var(--t-dim)' }}>Részek</div>
+          </div>
+          <div className="text-4xl font-bold glow-text" style={{ color: 'var(--t-accent)' }}>{totalEpisodes}</div>
+          <div className="mt-2 text-xs" style={{ color: 'var(--t-muted)' }}>epizód megnézve</div>
         </div>
-        <div className="glass-panel p-4 rounded-xl col-span-2 md:col-span-1">
-          <div className="text-3xl font-bold glow-text" style={{ color: 'var(--t-accent)' }}>{totalHours}h</div>
-          <div className="text-xs uppercase tracking-widest mt-1" style={{ color: 'var(--t-dim)' }}>Nézési idő</div>
+
+        <div className="glass-panel p-5 rounded-xl fade-in">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-2xl">⏱️</span>
+            <div className="text-xs uppercase tracking-widest" style={{ color: 'var(--t-dim)' }}>Nézési idő</div>
+          </div>
+          <div className="text-4xl font-bold glow-text" style={{ color: 'var(--t-accent)' }}>{formatWatchTime()}</div>
+          <div className="mt-2 text-xs" style={{ color: 'var(--t-muted)' }}>{totalMinutes} perc összesen</div>
         </div>
       </div>
 
       {/* Controls */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Keresés..."
-          className="input-oni flex-1"
-        />
+      <div className="flex flex-col md:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--t-dim)' }}>🔍</span>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Keresés anime neve alapján..."
+            className="input-oni w-full pl-9 pr-4 py-2.5 rounded-lg"
+          />
+        </div>
         <select
           value={sortBy}
           onChange={e => setSortBy(e.target.value as typeof sortBy)}
-          className="input-oni md:w-48"
+          className="input-oni md:w-52 px-3 py-2.5 rounded-lg"
         >
           <option value="last_watched">Utolsó nézés</option>
           <option value="anime_title">Cím szerint</option>
@@ -145,46 +171,93 @@ export default function DashboardPage() {
       {/* Error */}
       {error && (
         <div className="glass-panel p-4 rounded-xl mb-6 border" style={{ borderColor: '#ef4444', color: '#ef4444' }}>
-          {error}
+          ⚠️ {error}
         </div>
       )}
 
       {/* Loading */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
+        <div className="flex items-center justify-center py-24">
           <div className="text-center">
-            <div className="text-4xl mb-4 animate-pulse" style={{ color: 'var(--t-accent)' }}>▶</div>
-            <div className="text-sm" style={{ color: 'var(--t-dim)' }}>Betöltés...</div>
+            <div className="text-5xl mb-4 animate-pulse" style={{ color: 'var(--t-accent)' }}>▶</div>
+            <div className="text-sm tracking-widest uppercase" style={{ color: 'var(--t-dim)' }}>Betöltés...</div>
           </div>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20" style={{ color: 'var(--t-muted)' }}>
-          {search ? 'Nincs találat' : 'Még nincs követés'}
+        <div className="text-center py-24 fade-in">
+          <div className="text-5xl mb-4">📭</div>
+          <div className="text-lg font-medium mb-2" style={{ color: 'var(--t-dim)' }}>
+            {search ? 'Nincs találat' : 'Még nincs követett anime'}
+          </div>
+          <div className="text-sm" style={{ color: 'var(--t-muted)' }}>
+            {search ? `"${search}" nem található` : 'Adj hozzá animéket a bővítménnyel!'}
+          </div>
         </div>
       ) : (
-        <div className="grid gap-4">
-          {filtered.map(item => (
-            <div key={item.id} className="glass-panel p-5 rounded-xl flex items-center justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-lg truncate" style={{ color: 'var(--t-text)' }}>
-                  {item.anime_title || `Show #${item.show_id}`}
+        <div className="grid gap-3 fade-in">
+          {filtered.map((item, index) => {
+            const episodePercent = item.episode > 0 ? Math.min((item.watched_count / item.episode) * 100, 100) : 0;
+            const itemMinutes = (item.duration_minutes || 0) * (item.watched_count || 0);
+            const itemHours = Math.floor(itemMinutes / 60);
+            const itemMins = itemMinutes % 60;
+            const timeStr = itemHours > 0 ? `${itemHours}ó ${itemMins}p` : `${itemMins}p`;
+
+            return (
+              <div
+                key={item.id}
+                className="glass-panel rounded-xl overflow-hidden fade-in"
+                style={{ animationDelay: `${index * 40}ms` }}
+              >
+                <div className="p-4 flex items-center justify-between gap-4">
+                  {/* Rank + Title */}
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
+                      style={{ background: 'var(--t-surface-2)', color: 'var(--t-dim)' }}
+                    >
+                      {index + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold truncate" style={{ color: 'var(--t-text)' }}>
+                        {item.anime_title || `Show #${item.show_id}`}
+                      </div>
+                      <div className="text-xs mt-0.5" style={{ color: 'var(--t-muted)' }}>
+                        Utoljára: {new Date(item.last_watched).toLocaleDateString('hu-HU')} · {timeStr} nézve
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="flex items-center gap-5 shrink-0">
+                    <div className="text-center">
+                      <div className="text-xl font-bold" style={{ color: 'var(--t-accent)' }}>{item.watched_count}</div>
+                      <div className="text-xs" style={{ color: 'var(--t-dim)' }}>rész</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xl font-bold" style={{ color: 'var(--t-text)' }}>{item.episode}</div>
+                      <div className="text-xs" style={{ color: 'var(--t-dim)' }}>epizód</div>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-xs mt-1" style={{ color: 'var(--t-muted)' }}>
-                  Utoljára nézve: {new Date(item.last_watched).toLocaleDateString('hu-HU')}
-                </div>
+
+                {/* Progress bar */}
+                {item.episode > 0 && (
+                  <div className="px-4 pb-3">
+                    <div className="flex items-center justify-between text-xs mb-1" style={{ color: 'var(--t-muted)' }}>
+                      <span>Haladás</span>
+                      <span>{Math.round(episodePercent)}%</span>
+                    </div>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--t-surface-2)' }}>
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{ width: `${episodePercent}%`, background: 'var(--t-accent)' }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-6 shrink-0">
-                <div className="text-center">
-                  <div className="text-xl font-bold" style={{ color: 'var(--t-accent)' }}>{item.watched_count}</div>
-                  <div className="text-xs" style={{ color: 'var(--t-dim)' }}>rész</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold" style={{ color: 'var(--t-text)' }}>{item.episode}</div>
-                  <div className="text-xs" style={{ color: 'var(--t-dim)' }}>epizód</div>
-                </div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
