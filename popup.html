@@ -2,46 +2,40 @@
 <html lang="hu">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OniAnime Tracker</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <span>&#40481; OniAnime Tracker</span>
-      <span class="version">v3.0</span>
-    </div>
+  <div class="header">
+    <span class="logo">🔥 OniAnime Tracker</span>
+    <button id="refresh" class="refresh-btn" title="Frissítés">↻</button>
+  </div>
 
-    <div class="section">
-      <div class="title">JELENLEGI EP&#211;Z&#211;D</div>
-      <div class="row">
-        <span>Anime:</span>
-        <span id="animeName" class="truncate" title="">-</span>
-      </div>
-      <div class="row">
-        <span>Epiz&#243;d:</span>
-        <span id="episode">-</span>
-      </div>
-      <div class="row">
-        <span>Halad&#225;s:</span>
-        <span id="progress">-</span>
-      </div>
-      <div class="row">
-        <span>Megn&#233;zve:</span>
-        <span id="watchStatus">-</span>
-      </div>
-      <div class="row">
-        <span>Supabase:</span>
-        <span id="syncStatus">-</span>
-      </div>
-    </div>
+  <div id="queueBadge" class="queue-badge" style="display:none"></div>
 
-    <div class="section" style="text-align:center;">
-      <button id="refresh" style="width:100%;">&#8635; Friss&#237;t&#233;s</button>
-      <div id="msg"></div>
+  <div class="info-grid">
+    <div class="info-row">
+      <span class="label">Anime</span>
+      <span id="animeName" class="value">-</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Epizód</span>
+      <span id="episode" class="value">-</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Haladás</span>
+      <span id="progress" class="value">-</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Státusz</span>
+      <span id="watchStatus" class="value">-</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Sync</span>
+      <span id="syncStatus" class="value">-</span>
     </div>
   </div>
+
   <script src="popup.js"></script>
 </body>
 </html>

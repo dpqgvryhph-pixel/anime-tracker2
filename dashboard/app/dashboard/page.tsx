@@ -1,29 +1,43 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { calculateStats, formatDate, formatTimeSpent, type Episode, type DashboardStats } from '@/lib/stats';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts';
+
+interface WatchedEpisode {
+  id: number;
+  show_id: number;
+  episode: number;
+  anime_title: string | null;
+  watched_count: number;
+  duration_minutes: number;
+  first_watched: string;
+  last_watched: string;
+}
 
 export default function DashboardPage() {
-  const [data, setData] = useState<Episode[]>([]);
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [data, setData] = useState<WatchedEpisode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'overview' | 'shows' | 'history'>('overview');
-  const [showFilter, setShowFilter] = useState<'all' | 'watching' | 'completed'>('all');
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState<'last_watched' | 'anime_title' | 'watched_count'>('last_watched');
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
+
+  useEffect(() => { setMounted(true); }, []);
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const res = await fetch('/api/data');
-      if (res.status === 401) { router.push('/'); return; }
+      if (res.status === 401) {
+        router.push('/');
+        return;
+      }
       const json = await res.json();
       if (json.error) throw new Error(json.error);
       setData(json.data || []);
-      setStats(calculateStats(json.data || []));
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Hiba az adatok betöltésekor');
     } finally {
       setLoading(false);
     }
@@ -31,349 +45,186 @@ export default function DashboardPage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/');
+  const filtered = data
+    .filter(ep => {
+      if (!search) return true;
+      const s = search.toLowerCase();
+      return (
+        (ep.anime_title || '').toLowerCase().includes(s) ||
+        String(ep.show_id).includes(s)
+      );
+    })
+    .sort((a, b) => {
+      if (sortBy === 'last_watched') return new Date(b.last_watched).getTime() - new Date(a.last_watched).getTime();
+      if (sortBy === 'watched_count') return b.watched_count - a.watched_count;
+      return (a.anime_title || '').localeCompare(b.anime_title || '', 'hu');
+    });
+
+  const stats = {
+    totalAnime: new Set(data.map(d => d.show_id)).size,
+    totalEpisodes: data.length,
+    totalWatched: data.reduce((s, d) => s + d.watched_count, 0),
+    totalMinutes: data.reduce((s, d) => s + (d.watched_count * (d.duration_minutes || 24)), 0),
   };
 
-  if (loading) return <LoadingScreen />;
-  if (error) return <ErrorScreen error={error} onRetry={loadData} />;
-  if (!stats) return null;
+  function formatDate(dateStr: string) {
+    const d = new Date(dateStr);
+    return d.toLocaleString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
 
-  const filteredShows = stats.shows.filter(s => {
-    if (showFilter === 'all') return true;
-    return s.status === showFilter;
-  });
+  async function handleLogout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/');
+  }
 
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <header className="sticky top-0 z-50 glass-panel border-b border-oni-border px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-8 h-8 bg-oni-accent rounded flex items-center justify-center font-display text-white">鬼</div>
-            <div>
-              <h1 className="font-display text-xl tracking-widest text-white">ONIANIME TRACKER</h1>
-              <p className="text-xs text-oni-dim">Statisztika Dashboard</p>
+    <div className="min-h-screen px-4 py-8 relative">
+      {/* Background glow */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(255,107,53,0.04) 0%, transparent 70%)' }} />
+      </div>
+
+      <div className={`max-w-6xl mx-auto transition-all duration-700 ${
+        mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+      }`}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-7 h-7 rounded bg-oni-accent flex items-center justify-center text-white text-sm font-bold">
+                鬼
+              </div>
+              <span className="font-display text-xl tracking-widest text-white glow-text">ONIANIME</span>
             </div>
+            <p className="text-oni-dim text-xs tracking-[0.25em] uppercase">Tracker Dashboard</p>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5 text-xs text-oni-dim">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              Szinkronizálva
-            </span>
-            <button onClick={loadData} className="text-xs text-oni-dim hover:text-oni-accent transition-colors px-3 py-1.5 border border-oni-border rounded">
-              ↻ Frissít
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push('/admin')}
+              className="text-xs text-oni-dim hover:text-oni-accent transition-colors px-3 py-1.5 rounded border border-oni-border hover:border-oni-accent/30"
+            >
+              ⚡ Admin
             </button>
-            <button onClick={handleLogout} className="text-xs text-oni-dim hover:text-oni-accent transition-colors px-3 py-1.5 border border-oni-border rounded">
+            <button
+              onClick={loadData}
+              className="text-xs text-oni-dim hover:text-oni-text transition-colors px-3 py-1.5 rounded border border-oni-border hover:border-oni-text/30"
+            >
+              ↻ Frissítés
+            </button>
+            <button
+              onClick={handleLogout}
+              className="text-xs text-oni-muted hover:text-red-400 transition-colors px-3 py-1.5 rounded border border-oni-border hover:border-red-400/30"
+            >
               Kilépés
             </button>
           </div>
         </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* Time Spent Hero */}
-        <TimeHero stats={stats} />
-
-        {/* Stat Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 stagger">
-          <StatCard label="Megnézett epizód" value={stats.totalEpisodes.toString()} icon="📺" />
-          <StatCard label="Animék száma" value={stats.totalShows.toString()} icon="🎌" />
-          <StatCard label="Ezen a héten" value={stats.epsThisWeek.toString()} icon="📅" sub="epizód" />
-          <StatCard label="Napi átlag" value={stats.avgPerDay.toString()} icon="⚡" sub="ep/nap" />
-        </div>
-
-        {/* Show status row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 stagger">
-          <StatCard label="Befejezett" value={stats.completedShows.toString()} icon="✅" accent="green" />
-          <StatCard label="Folyamatban" value={stats.watchingShows.toString()} icon="▶️" accent="yellow" />
-          <StatCard label="Ma nézett" value={stats.epsToday.toString()} icon="🌙" sub="epizód" />
-          <StatCard label="Ebben a hónapban" value={stats.epsThisMonth.toString()} icon="📆" sub="epizód" />
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-1 mb-6 border-b border-oni-border">
-          {(['overview', 'shows', 'history'] as const).map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-5 py-2.5 font-display tracking-widest text-sm transition-all ${
-                activeTab === tab
-                  ? 'text-oni-accent border-b-2 border-oni-accent -mb-px'
-                  : 'text-oni-dim hover:text-oni-text'
-              }`}
-            >
-              {tab === 'overview' ? 'ÁTTEKINTÉS' : tab === 'shows' ? 'ANIMÉK' : 'ELŐZMÉNYEK'}
-            </button>
-          ))}
-        </div>
-
-        {activeTab === 'overview' && <OverviewTab stats={stats} />}
-        {activeTab === 'shows' && (
-          <ShowsTab shows={filteredShows} filter={showFilter} onFilter={setShowFilter} />
-        )}
-        {activeTab === 'history' && <HistoryTab episodes={stats.recentEpisodes} />}
-      </main>
-    </div>
-  );
-}
-
-// ─── TIME HERO ───────────────────────────────────────────────────────────────
-function TimeHero({ stats }: { stats: DashboardStats }) {
-  const parts = [
-    { value: stats.years, label: 'ÉV' },
-    { value: stats.months, label: 'HÓ' },
-    { value: stats.weeks, label: 'HÉT' },
-    { value: stats.days, label: 'NAP' },
-    { value: stats.hours, label: 'ÓRA' },
-    { value: stats.minutes, label: 'PERC' },
-  ].filter(p => p.value > 0 || p.label === 'PERC');
-
-  return (
-    <div className="glass-panel rounded-lg p-8 mb-8 relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(255,107,53,0.08) 0%, transparent 70%)' }} />
-        <div className="absolute top-0 left-0 font-display text-[120px] text-white opacity-[0.02] leading-none select-none">
-          鬼
-        </div>
-      </div>
-      <div className="relative">
-        <p className="text-xs text-oni-dim tracking-[0.3em] uppercase mb-3">Összesen eltöltött idő</p>
-        <div className="flex flex-wrap gap-4 md:gap-8 items-end">
-          {parts.map((p, i) => (
-            <div key={i} className="flex flex-col items-center">
-              <span className="font-display text-5xl md:text-7xl text-white glow-text leading-none" 
-                style={{ textShadow: '0 0 40px rgba(255,107,53,0.5)' }}>
-                {p.value.toString().padStart(2, '0')}
-              </span>
-              <span className="text-xs text-oni-dim tracking-widest mt-1">{p.label}</span>
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {[
+            { label: 'Anime sorozat', value: stats.totalAnime, icon: '🎌' },
+            { label: 'Epizód', value: stats.totalEpisodes, icon: '📺' },
+            { label: 'Összes megtekintés', value: stats.totalWatched, icon: '👁' },
+            { label: 'Percek', value: stats.totalMinutes.toLocaleString('hu-HU'), icon: '⏱' },
+          ].map(stat => (
+            <div key={stat.label} className="glass-panel rounded-lg p-4">
+              <div className="text-xl mb-1">{stat.icon}</div>
+              <div className="font-display text-2xl text-white mb-0.5">{stat.value}</div>
+              <div className="text-oni-dim text-xs tracking-wider uppercase">{stat.label}</div>
             </div>
           ))}
-          {parts.length > 1 && parts.slice(0, -1).map((_, i) => (
-            <span key={`sep-${i}`} className="font-display text-4xl text-oni-accent opacity-40 -ml-6 mb-4">:</span>
-          ))}
-        </div>
-        <p className="text-xs text-oni-muted mt-4">
-          = kb. {formatTimeSpent(Math.round(stats.totalMinutes))} anime tartalom
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ─── STAT CARD ───────────────────────────────────────────────────────────────
-function StatCard({ label, value, icon, sub, accent }: {
-  label: string; value: string; icon: string; sub?: string; accent?: 'green' | 'yellow';
-}) {
-  const color = accent === 'green' ? '#4ade80' : accent === 'yellow' ? '#fbbf24' : '#ff6b35';
-  return (
-    <div className="glass-panel rounded-lg p-4 hover:border-oni-accent/30 transition-all duration-300 group">
-      <div className="flex items-start justify-between mb-3">
-        <span className="text-xl">{icon}</span>
-        <div className="w-1 h-1 rounded-full" style={{ background: color }} />
-      </div>
-      <div className="font-display text-3xl mb-1" style={{ color }}>{value}</div>
-      <div className="text-xs text-oni-dim leading-tight">{label}</div>
-      {sub && <div className="text-xs text-oni-muted mt-0.5">{sub}</div>}
-    </div>
-  );
-}
-
-// ─── OVERVIEW TAB ─────────────────────────────────────────────────────────────
-function OverviewTab({ stats }: { stats: DashboardStats }) {
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload?.length) {
-      return (
-        <div className="glass-panel rounded px-3 py-2 text-xs">
-          <p className="text-oni-dim">{label}</p>
-          <p className="text-oni-accent font-display text-base">{payload[0].value} ep</p>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* Charts row */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <div className="glass-panel rounded-lg p-6">
-          <h3 className="font-display tracking-widest text-sm text-oni-dim mb-6">ELMÚLT 7 NAP</h3>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={stats.weeklyData}>
-              <XAxis dataKey="day" tick={{ fill: '#8892a4', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#8892a4', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,107,53,0.05)' }} />
-              <Bar dataKey="count" fill="#ff6b35" radius={[3, 3, 0, 0]} opacity={0.9} />
-            </BarChart>
-          </ResponsiveContainer>
         </div>
 
-        <div className="glass-panel rounded-lg p-6">
-          <h3 className="font-display tracking-widest text-sm text-oni-dim mb-6">ELMÚLT 12 HÓNAP</h3>
-          <ResponsiveContainer width="100%" height={180}>
-            <LineChart data={stats.monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,107,53,0.07)" />
-              <XAxis dataKey="month" tick={{ fill: '#8892a4', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#8892a4', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Line type="monotone" dataKey="count" stroke="#ff6b35" strokeWidth={2} dot={{ fill: '#ff6b35', r: 3 }} activeDot={{ r: 5 }} />
-            </LineChart>
-          </ResponsiveContainer>
+        {/* Controls */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-5">
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Keresés anime neve vagy Show ID alapján..."
+            className="input-oni flex-1 px-4 py-2.5 rounded text-oni-text text-sm"
+          />
+          <select
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value as typeof sortBy)}
+            className="input-oni px-4 py-2.5 rounded text-oni-text text-sm cursor-pointer"
+          >
+            <option value="last_watched">Utoljára nézett</option>
+            <option value="watched_count">Megtekintések száma</option>
+            <option value="anime_title">Cím szerint (A-Z)</option>
+          </select>
         </div>
-      </div>
 
-      {/* Top shows */}
-      <div className="glass-panel rounded-lg p-6">
-        <h3 className="font-display tracking-widest text-sm text-oni-dim mb-6">TOP ANIMÉK</h3>
-        <div className="space-y-3">
-          {stats.shows.slice(0, 8).map((show, i) => {
-            const maxEps = stats.shows[0]?.episodeCount || 1;
-            const pct = Math.round((show.episodeCount / maxEps) * 100);
-            return (
-              <div key={i} className="flex items-center gap-4 anime-row px-2 py-1 rounded">
-                <span className="font-display text-oni-muted text-sm w-6 text-right">{i + 1}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-oni-text truncate pr-4">{show.name}</span>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className={`text-xs px-2 py-0.5 rounded ${show.status === 'watching' ? 'badge-watching' : 'badge-done'}`}>
-                        {show.status === 'watching' ? 'Nézi' : 'Kész'}
-                      </span>
-                      <span className="badge-ep">{show.episodeCount} ep</span>
-                    </div>
-                  </div>
-                  <div className="w-full bg-oni-border rounded-full h-0.5">
-                    <div className="progress-bar" style={{ width: `${pct}%` }} />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── SHOWS TAB ───────────────────────────────────────────────────────────────
-function ShowsTab({ shows, filter, onFilter }: {
-  shows: any[]; filter: string; onFilter: (f: any) => void;
-}) {
-  return (
-    <div>
-      <div className="flex gap-2 mb-6">
-        {(['all', 'watching', 'completed'] as const).map(f => (
-          <button key={f} onClick={() => onFilter(f)}
-            className={`px-4 py-1.5 rounded text-xs tracking-wider transition-all ${
-              filter === f
-                ? 'bg-oni-accent text-white'
-                : 'border border-oni-border text-oni-dim hover:border-oni-accent/40'
-            }`}>
-            {f === 'all' ? 'MIND' : f === 'watching' ? 'NÉZI' : 'BEFEJEZETT'}
-          </button>
-        ))}
-      </div>
-
-      <div className="glass-panel rounded-lg overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-oni-border">
-              <th className="text-left px-6 py-3 text-xs text-oni-dim tracking-widest">#</th>
-              <th className="text-left px-6 py-3 text-xs text-oni-dim tracking-widest">ANIME CÍM</th>
-              <th className="text-left px-6 py-3 text-xs text-oni-dim tracking-widest">EPIZÓDOK</th>
-              <th className="text-left px-6 py-3 text-xs text-oni-dim tracking-widest">IDŐ</th>
-              <th className="text-left px-6 py-3 text-xs text-oni-dim tracking-widest">STÁTUSZ</th>
-              <th className="text-left px-6 py-3 text-xs text-oni-dim tracking-widest">UTOLJÁRA</th>
-            </tr>
-          </thead>
-          <tbody>
-            {shows.map((show, i) => (
-              <tr key={i} className="anime-row border-b border-oni-border/50 last:border-0">
-                <td className="px-6 py-4 text-oni-muted font-display text-sm">{i + 1}</td>
-                <td className="px-6 py-4">
-                  <span className="text-oni-text font-medium text-sm">{show.name}</span>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="badge-ep">{show.episodeCount} ep</span>
-                </td>
-                <td className="px-6 py-4 text-xs text-oni-dim">
-                  {formatTimeSpent(show.totalMinutes)}
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`text-xs px-2 py-1 rounded ${show.status === 'watching' ? 'badge-watching' : 'badge-done'}`}>
-                    {show.status === 'watching' ? '▶ Nézi' : '✓ Kész'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-xs text-oni-dim">{formatDate(show.lastWatched)}</td>
-              </tr>
+        {/* Data */}
+        {loading ? (
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="glass-panel rounded-lg h-16 animate-pulse" />
             ))}
-          </tbody>
-        </table>
-        {shows.length === 0 && (
-          <div className="text-center py-12 text-oni-muted">Nincs találat</div>
+          </div>
+        ) : error ? (
+          <div className="glass-panel rounded-lg p-8 text-center">
+            <div className="text-red-400 text-sm">{error}</div>
+            <button onClick={loadData} className="mt-4 text-xs text-oni-dim hover:text-oni-text transition-colors">
+              Újrapróbálkozás
+            </button>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="glass-panel rounded-lg p-12 text-center">
+            <div className="text-4xl mb-3">📭</div>
+            <p className="text-oni-dim text-sm">{search ? 'Nincs találat a keresésre' : 'Még nincs rögzített epizód'}</p>
+            {search && (
+              <button onClick={() => setSearch('')} className="mt-3 text-xs text-oni-accent hover:underline">
+                Keresés törlése
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="glass-panel rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-oni-border">
+                    {['Anime', 'Show ID', 'Epizód', 'Megtekintés', 'Utoljára nézve', 'Először nézve'].map(h => (
+                      <th key={h} className="text-left px-4 py-3 text-xs text-oni-dim tracking-wider uppercase font-medium">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((ep, i) => (
+                    <tr key={ep.id} className={`border-b border-oni-border/50 hover:bg-white/[0.02] transition-colors ${
+                      i === filtered.length - 1 ? 'border-b-0' : ''
+                    }`}>
+                      <td className="px-4 py-3 text-oni-text font-medium max-w-[200px]">
+                        <div className="truncate" title={ep.anime_title || '-'}>
+                          {ep.anime_title || <span className="text-oni-muted italic">Ismeretlen</span>}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-oni-muted font-mono text-xs">{ep.show_id}</td>
+                      <td className="px-4 py-3">
+                        <span className="text-oni-accent font-bold">{ep.episode}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-xs px-2 py-0.5 rounded-full"
+                          style={{ background: 'rgba(255,107,53,0.1)', color: '#ff6b35', border: '1px solid rgba(255,107,53,0.2)' }}>
+                          {ep.watched_count}x
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-oni-dim text-xs">{formatDate(ep.last_watched)}</td>
+                      <td className="px-4 py-3 text-oni-muted text-xs">{formatDate(ep.first_watched)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="px-4 py-3 border-t border-oni-border text-xs text-oni-muted">
+              {filtered.length} találat {data.length !== filtered.length ? `(összesen: ${data.length})` : ''}
+            </div>
+          </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-// ─── HISTORY TAB ─────────────────────────────────────────────────────────────
-function HistoryTab({ episodes }: { episodes: any[] }) {
-  return (
-    <div className="glass-panel rounded-lg overflow-hidden">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-oni-border">
-            <th className="text-left px-6 py-3 text-xs text-oni-dim tracking-widest">ANIME</th>
-            <th className="text-left px-6 py-3 text-xs text-oni-dim tracking-widest">EPIZÓD</th>
-            <th className="text-left px-6 py-3 text-xs text-oni-dim tracking-widest">MEGNÉZVE</th>
-            <th className="text-left px-6 py-3 text-xs text-oni-dim tracking-widest">UTOLJÁRA</th>
-          </tr>
-        </thead>
-        <tbody>
-          {episodes.map((ep, i) => (
-            <tr key={i} className="anime-row border-b border-oni-border/50 last:border-0">
-              <td className="px-6 py-3 text-sm text-oni-text">{ep.anime_title || `Show #${ep.show_id}`}</td>
-              <td className="px-6 py-3"><span className="badge-ep">{ep.episode}. rész</span></td>
-              <td className="px-6 py-3 text-xs text-oni-dim">{ep.watched_count}×</td>
-              <td className="px-6 py-3 text-xs text-oni-dim">{formatDate(ep.last_watched)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-// ─── LOADING ──────────────────────────────────────────────────────────────────
-function LoadingScreen() {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-6">
-      <div className="font-display text-6xl text-white glow-text animate-pulse">鬼</div>
-      <div className="w-48 h-0.5 bg-oni-border rounded overflow-hidden">
-        <div className="h-full bg-oni-accent rounded animate-[slide_1.5s_ease-in-out_infinite]"
-          style={{ animation: 'loading 1.5s ease-in-out infinite' }} />
-      </div>
-      <style>{`@keyframes loading { 0% { width:0; margin-left:0; } 50% { width:100%; margin-left:0; } 100% { width:0; margin-left:100%; }}`}</style>
-      <p className="text-oni-dim text-xs tracking-widest">ADATOK BETÖLTÉSE...</p>
-    </div>
-  );
-}
-
-function ErrorScreen({ error, onRetry }: { error: string; onRetry: () => void }) {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="glass-panel rounded-lg p-8 max-w-md text-center">
-        <div className="text-red-400 text-4xl mb-4">⚠</div>
-        <h2 className="font-display tracking-widest text-white mb-2">HIBA</h2>
-        <p className="text-oni-dim text-sm mb-6">{error}</p>
-        <button onClick={onRetry} className="px-6 py-2 bg-oni-accent text-white rounded text-sm font-display tracking-widest">
-          ÚJRA
-        </button>
       </div>
     </div>
   );

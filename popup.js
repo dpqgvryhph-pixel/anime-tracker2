@@ -1,4 +1,5 @@
-// OniAnime Tracker - Popup v3.0
+// OniAnime Tracker - Popup v3.1
+// JAVÍTÁS: Jobb státusz megjelenítés + offline sor jelzés
 (async function() {
 
   async function loadStatus() {
@@ -12,6 +13,7 @@
       document.getElementById('progress').textContent = 'Nem watch oldal';
       document.getElementById('watchStatus').textContent = '-';
       document.getElementById('syncStatus').textContent = '-';
+      updateQueueBadge(0);
       return;
     }
 
@@ -33,9 +35,17 @@
     chrome.storage.local.get([key], (r) => {
       const c = r[key] || 0;
       const el = document.getElementById('watchStatus');
-      el.textContent = c > 0 ? `\u2713 Megn\u00e9zve (${c}x)` : '\u2717 Nincs';
+      el.textContent = c > 0 ? `✓ Megnézve (${c}x)` : '✗ Nincs';
       el.style.color = c > 0 ? '#4ade80' : '#f87171';
     });
+
+    // Offline sor ellenőrzése
+    try {
+      const queueRes = await chrome.runtime.sendMessage({ type: 'GET_QUEUE_STATUS' });
+      updateQueueBadge(queueRes ? queueRes.pending : 0);
+    } catch(e) {
+      updateQueueBadge(0);
+    }
 
     // Élő státusz a content scripttől
     try {
@@ -47,9 +57,21 @@
         s.style.color = res.syncColor || '#94a3b8';
       }
     } catch (e) {
-      document.getElementById('progress').textContent = 'N/A';
-      document.getElementById('syncStatus').textContent = 'Content script nem fut';
-      document.getElementById('syncStatus').style.color = '#f87171';
+      // A content script talán még nem töltött be (pl. friss tab)
+      document.getElementById('progress').textContent = '0%';
+      document.getElementById('syncStatus').textContent = 'Oldal betöltésére vár...';
+      document.getElementById('syncStatus').style.color = '#94a3b8';
+    }
+  }
+
+  function updateQueueBadge(count) {
+    const badge = document.getElementById('queueBadge');
+    if (!badge) return;
+    if (count > 0) {
+      badge.textContent = `⚠ ${count} szinkronizálatlan`;
+      badge.style.display = 'block';
+    } else {
+      badge.style.display = 'none';
     }
   }
 
