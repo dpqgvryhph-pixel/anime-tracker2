@@ -11,28 +11,49 @@
     <button id="refresh" class="refresh-btn" title="Frissítés">↻</button>
   </div>
 
-  <div id="queueBadge" class="queue-badge" style="display:none"></div>
+  <!-- Token beállítás panel -->
+  <div id="tokenPanel" class="token-panel" style="display:none">
+    <div class="token-warning">⚠ API token hiányzik!</div>
+    <p class="token-hint">Nyisd meg a dashboardot és másold be a tokent:</p>
+    <div class="token-input-row">
+      <input id="tokenInput" type="password" placeholder="oni_xxxxxxxxxxxxxxxx" class="token-input" />
+      <button id="saveToken" class="save-btn">Mentés</button>
+    </div>
+    <a href="https://onianime-tracker2.vercel.app/dashboard" target="_blank" class="dashboard-link">
+      🌐 Dashboard megnyitása →
+    </a>
+  </div>
 
-  <div class="info-grid">
-    <div class="info-row">
-      <span class="label">Anime</span>
-      <span id="animeName" class="value">-</span>
+  <!-- Státusz panel -->
+  <div id="statusPanel">
+    <div id="queueBadge" class="queue-badge" style="display:none"></div>
+    <div class="info-grid">
+      <div class="info-row">
+        <span class="label">Anime</span>
+        <span id="animeName" class="value">-</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Epizód</span>
+        <span id="episode" class="value">-</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Haladás</span>
+        <span id="progress" class="value">-</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Státusz</span>
+        <span id="watchStatus" class="value">-</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Sync</span>
+        <span id="syncStatus" class="value">-</span>
+      </div>
     </div>
-    <div class="info-row">
-      <span class="label">Epizód</span>
-      <span id="episode" class="value">-</span>
-    </div>
-    <div class="info-row">
-      <span class="label">Haladás</span>
-      <span id="progress" class="value">-</span>
-    </div>
-    <div class="info-row">
-      <span class="label">Státusz</span>
-      <span id="watchStatus" class="value">-</span>
-    </div>
-    <div class="info-row">
-      <span class="label">Sync</span>
-      <span id="syncStatus" class="value">-</span>
+    <div class="footer-actions">
+      <a href="https://onianime-tracker2.vercel.app/dashboard" target="_blank" class="dashboard-link-small">
+        🌐 Dashboard
+      </a>
+      <button id="resetToken" class="reset-token-btn">Token csére</button>
     </div>
   </div>
 

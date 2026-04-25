@@ -1,119 +1,113 @@
-// OniAnime Tracker - Background Service Worker v3.1
-// JAVÍTÁS: Retry logika + jobb hibakezelés a szinkronizáláshoz
+// OniAnime Tracker - Background Service Worker v4.0
+// Új archítektúra: az extension CSAK jelzi az eseményt a webes API-nak.
+// Minden logika (számláló, statisztika, frissítés) a weben történik.
+// Így az extension nem igényel GitHub-frissítést, ha a backend változik.
 
-const SUPABASE_URL = 'https://uctzsndnlmpsmniufrzg.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjdHpzbmRubG1wc21uaXVmcnpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMTM5MTUsImV4cCI6MjA5MjY4OTkxNX0.anzOAGIclTRNtF8DwA6mqQIt0nSvAbwACGN76-rolHc';
+const API_BASE = 'https://onianime-tracker2.vercel.app';
 
-async function sendToSupabase(showId, episode, animeName, retries = 3) {
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_watched_count`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({
-          p_show_id: parseInt(showId),
-          p_episode: parseInt(episode),
-          p_anime_title: animeName
-        })
-      });
-
-      if (response.ok) {
-        console.log(`[OniAnime] ✓ Szinkronizálva (${attempt}. kísérlet): show ${showId}, ep ${episode}`);
-        return { success: true };
-      }
-
-      const err = await response.text();
-      console.warn(`[OniAnime] Kísérlet ${attempt}/${retries} sikertelen:`, err);
-
-      // Ne próbálja újra ha 4xx hiba (kliens hiba)
-      if (response.status >= 400 && response.status < 500) {
-        return { success: false, error: err, status: response.status };
-      }
-
-      // Várj exponenciálisan növekvő időt (500ms, 1000ms, 2000ms)
-      if (attempt < retries) {
-        await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt - 1)));
-      }
-    } catch (e) {
-      console.warn(`[OniAnime] Hálózati hiba (${attempt}/${retries}):`, e.message);
-      if (attempt < retries) {
-        await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt - 1)));
-      } else {
-        return { success: false, error: e.message, network: true };
-      }
-    }
-  }
-  return { success: false, error: 'Max kísérletek kimerültek' };
+// Az API token a Supabase-ből kerül lekérésre bejelentkezéskor,
+// vagy a felhasználó beállítja popup-ban egyszer.
+async function getApiToken() {
+  const r = await chrome.storage.local.get(['oni_api_token']);
+  return r.oni_api_token || null;
 }
 
-// Offline sorba állítás
+async function syncEpisode(showId, episode, animeName) {
+  const token = await getApiToken();
+  if (!token) {
+    console.warn('[OniAnime] Nincs API token - állítsd be a popup-ban');
+    return { success: false, error: 'no_token' };
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/api/sync`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Oni-Token': token
+      },
+      body: JSON.stringify({
+        show_id: parseInt(showId),
+        episode: parseInt(episode),
+        anime_title: animeName
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log(`[OniAnime] ✓ Szinkronizálva: ${animeName} ep${episode}`, data);
+      return { success: true, data };
+    }
+
+    // Token hibás/lejárt
+    if (response.status === 401) {
+      await chrome.storage.local.remove(['oni_api_token']);
+      return { success: false, error: 'invalid_token' };
+    }
+
+    const err = await response.text();
+    return { success: false, error: err, status: response.status };
+  } catch (e) {
+    // Offline esetén sorba állítjuk
+    await queueForRetry(showId, episode, animeName);
+    return { success: false, error: 'network', queued: true };
+  }
+}
+
 async function queueForRetry(showId, episode, animeName) {
-  const key = 'oni_retry_queue';
-  const stored = await chrome.storage.local.get([key]);
-  const queue = stored[key] || [];
-  
-  // Duplikátum ellenőrzés
-  const exists = queue.some(item => item.showId === showId && item.episode === episode);
+  const r = await chrome.storage.local.get(['oni_queue']);
+  const queue = r.oni_queue || [];
+  const exists = queue.some(i => i.showId === showId && i.episode === episode);
   if (!exists) {
-    queue.push({ showId, episode, animeName, timestamp: Date.now() });
-    await chrome.storage.local.set({ [key]: queue });
-    console.log(`[OniAnime] Sorba állítva offline feldolgozásra: show ${showId}, ep ${episode}`);
+    queue.push({ showId, episode, animeName, ts: Date.now() });
+    await chrome.storage.local.set({ oni_queue: queue });
   }
 }
 
-async function processRetryQueue() {
-  const key = 'oni_retry_queue';
-  const stored = await chrome.storage.local.get([key]);
-  const queue = stored[key] || [];
-  if (queue.length === 0) return;
-
-  console.log(`[OniAnime] Offline sor feldolgozása: ${queue.length} elem`);
+async function processQueue() {
+  const r = await chrome.storage.local.get(['oni_queue']);
+  const queue = r.oni_queue || [];
+  if (!queue.length) return;
   const remaining = [];
-
   for (const item of queue) {
-    const result = await sendToSupabase(item.showId, item.episode, item.animeName, 1);
-    if (!result.success) {
-      remaining.push(item);
-    }
+    const res = await syncEpisode(item.showId, item.episode, item.animeName);
+    if (!res.success && !res.queued) remaining.push(item);
+    // Ha nincs token még, ne próbálja tovább
+    if (res.error === 'no_token') break;
   }
-
-  await chrome.storage.local.set({ [key]: remaining });
-  if (remaining.length < queue.length) {
-    console.log(`[OniAnime] Sikeresen feldolgozva: ${queue.length - remaining.length} elem`);
-  }
+  await chrome.storage.local.set({ oni_queue: remaining });
 }
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'EPISODE_WATCHED') {
-    sendToSupabase(message.showId, message.episode, message.animeName)
-      .then(async result => {
-        if (!result.success && result.network) {
-          // Hálózati hiba esetén sorba állítjuk
-          await queueForRetry(message.showId, message.episode, message.animeName);
-        }
-        sendResponse(result);
-      });
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg.type === 'EPISODE_WATCHED') {
+    syncEpisode(msg.showId, msg.episode, msg.animeName).then(sendResponse);
     return true;
   }
-
-  if (message.type === 'GET_QUEUE_STATUS') {
-    chrome.storage.local.get(['oni_retry_queue'], (r) => {
-      sendResponse({ pending: (r.oni_retry_queue || []).length });
+  if (msg.type === 'GET_QUEUE_STATUS') {
+    chrome.storage.local.get(['oni_queue'], r => {
+      sendResponse({ pending: (r.oni_queue || []).length });
+    });
+    return true;
+  }
+  if (msg.type === 'SET_TOKEN') {
+    chrome.storage.local.set({ oni_api_token: msg.token }, () => {
+      processQueue(); // azonnal feldolgozza a sort
+      sendResponse({ success: true });
+    });
+    return true;
+  }
+  if (msg.type === 'GET_TOKEN_STATUS') {
+    chrome.storage.local.get(['oni_api_token'], r => {
+      sendResponse({ hasToken: !!r.oni_api_token });
     });
     return true;
   }
 });
 
-// Online visszatéréskor feldolgozzuk a sort
-self.addEventListener('fetch', () => {});
-chrome.runtime.onStartup.addListener(processRetryQueue);
-
-// Alarm a rendszeres retry-hoz (5 percenként)
-chrome.alarms && chrome.alarms.create('retryQueue', { periodInMinutes: 5 });
-chrome.alarms && chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === 'retryQueue') processRetryQueue();
+// 5 percenként feldolgozza az offline sort
+chrome.alarms.create('retryQueue', { periodInMinutes: 5 });
+chrome.alarms.onAlarm.addListener(alarm => {
+  if (alarm.name === 'retryQueue') processQueue();
 });
+
+chrome.runtime.onStartup.addListener(processQueue);

@@ -1,7 +1,44 @@
-// OniAnime Tracker - Popup v3.1
-// JAVÍTÁS: Jobb státusz megjelenítés + offline sor jelzés
+// OniAnime Tracker - Popup v4.0
+// Új arch: token kezelés + webes dashboard link
 (async function() {
 
+  // === TOKEN KEZELÉS ===
+  async function checkToken() {
+    const res = await chrome.runtime.sendMessage({ type: 'GET_TOKEN_STATUS' });
+    return res && res.hasToken;
+  }
+
+  async function init() {
+    const hasToken = await checkToken();
+    if (!hasToken) {
+      document.getElementById('tokenPanel').style.display = 'block';
+      document.getElementById('statusPanel').style.display = 'none';
+    } else {
+      document.getElementById('tokenPanel').style.display = 'none';
+      document.getElementById('statusPanel').style.display = 'block';
+      await loadStatus();
+    }
+  }
+
+  document.getElementById('saveToken').addEventListener('click', async () => {
+    const token = document.getElementById('tokenInput').value.trim();
+    if (!token) return;
+    const res = await chrome.runtime.sendMessage({ type: 'SET_TOKEN', token });
+    if (res && res.success) {
+      init(); // Újraindul a panel
+    }
+  });
+
+  document.getElementById('tokenInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('saveToken').click();
+  });
+
+  document.getElementById('resetToken').addEventListener('click', async () => {
+    await chrome.storage.local.remove(['oni_api_token']);
+    init();
+  });
+
+  // === STÁTUSZ BETÖLTÉSE ===
   async function loadStatus() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab) return;
@@ -20,7 +57,6 @@
     const showId = match[1], episode = match[2];
     document.getElementById('episode').textContent = episode;
 
-    // Anime neve a tab titleből
     let animeName = `Show ID: ${showId}`;
     if (tab.title) {
       let dTitle = tab.title.replace(/\| OniAnime/i, '').trim();
@@ -31,23 +67,21 @@
     nameEl.title = animeName;
 
     // Lokális megnézési szám
-    const key = `watched_${showId}_${episode}`;
-    chrome.storage.local.get([key], (r) => {
+    const key = `wc_${showId}_${episode}`;
+    chrome.storage.local.get([key], r => {
       const c = r[key] || 0;
       const el = document.getElementById('watchStatus');
       el.textContent = c > 0 ? `✓ Megnézve (${c}x)` : '✗ Nincs';
       el.style.color = c > 0 ? '#4ade80' : '#f87171';
     });
 
-    // Offline sor ellenőrzése
+    // Offline sor
     try {
       const queueRes = await chrome.runtime.sendMessage({ type: 'GET_QUEUE_STATUS' });
       updateQueueBadge(queueRes ? queueRes.pending : 0);
-    } catch(e) {
-      updateQueueBadge(0);
-    }
+    } catch(e) { updateQueueBadge(0); }
 
-    // Élő státusz a content scripttől
+    // Élő státusz
     try {
       const res = await chrome.tabs.sendMessage(tab.id, { type: 'GET_STATUS' });
       if (res) {
@@ -57,7 +91,6 @@
         s.style.color = res.syncColor || '#94a3b8';
       }
     } catch (e) {
-      // A content script talán még nem töltött be (pl. friss tab)
       document.getElementById('progress').textContent = '0%';
       document.getElementById('syncStatus').textContent = 'Oldal betöltésére vár...';
       document.getElementById('syncStatus').style.color = '#94a3b8';
@@ -67,15 +100,11 @@
   function updateQueueBadge(count) {
     const badge = document.getElementById('queueBadge');
     if (!badge) return;
-    if (count > 0) {
-      badge.textContent = `⚠ ${count} szinkronizálatlan`;
-      badge.style.display = 'block';
-    } else {
-      badge.style.display = 'none';
-    }
+    badge.textContent = count > 0 ? `⚠ ${count} szinkronizálatlan epizód` : '';
+    badge.style.display = count > 0 ? 'block' : 'none';
   }
 
-  loadStatus();
   document.getElementById('refresh').onclick = loadStatus;
+  init();
 
 })();
