@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -13,15 +14,16 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/login', {
+      const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ username, password }),
       });
       if (res.ok) {
         router.push('/dashboard');
       } else {
-        setError('Hibás jelszó');
+        const data = await res.json().catch(() => ({}));
+        setError(data.error === 'Server misconfigured' ? 'Szerver hiba' : 'Hibás felhasználónév vagy jelszó');
       }
     } catch {
       setError('Kapcsolati hiba');
@@ -50,12 +52,23 @@ export default function LoginPage() {
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <input
+              type="text"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              placeholder="Felhasználónév..."
+              className="input-oni w-full"
+              autoComplete="username"
+              autoFocus
+            />
+          </div>
+          <div>
+            <input
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="Jelszó..."
               className="input-oni w-full"
-              autoFocus
+              autoComplete="current-password"
             />
           </div>
 
@@ -65,7 +78,7 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={loading || !password}
+            disabled={loading || !username || !password}
             className="w-full py-3 rounded-xl font-bold tracking-wider transition-all disabled:opacity-50"
             style={{ background: 'var(--t-accent)', color: '#fff' }}
           >
