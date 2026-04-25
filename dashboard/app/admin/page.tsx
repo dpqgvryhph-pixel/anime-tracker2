@@ -42,7 +42,7 @@ export default function AdminPage() {
       if (usersRes.status === 401 || statsRes.status === 401) { router.push('/'); return; }
       const usersData = await usersRes.json();
       const statsData = await statsRes.json();
-      if (usersData.data) setUsers(usersData.data);
+              if (usersData.users) setUsers(usersData.users);
       if (!statsData.error) setStats(statsData);
     } catch { setError('Adatok betöltése sikertelen'); }
     finally { setLoading(false); }
@@ -59,7 +59,7 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setCreateSuccess(`✓ Létrehozva: ${data.data.username}`);
+                  setCreateSuccess(`✓ Létrehozva: ${data.user.username}`);
         setNewUsername(''); setNewDisplayName('');
         loadData();
       } else { setCreateError(data.error || 'Hiba történt'); }
