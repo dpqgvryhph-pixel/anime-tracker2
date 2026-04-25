@@ -1,5 +1,6 @@
 {
+  "outputDirectory": "dashboard",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/dashboard/$1" }
+    { "source": "/(.*)", "destination": "/$1" }
   ]
 }
