@@ -1,0 +1,192 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;500;600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'Syne', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #060910;
+  color: #e2e8f0;
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Noise texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.4;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #060910; }
+::-webkit-scrollbar-thumb { background: #ff6b35; border-radius: 2px; }
+
+/* Grid lines background */
+.grid-bg {
+  background-image: 
+    linear-gradient(rgba(255, 107, 53, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 107, 53, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Scan line effect */
+.scanlines::after {
+  content: '';
+  position: fixed;
+  top: -100%;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: linear-gradient(transparent, rgba(255,107,53,0.02), transparent);
+  animation: scan 4s linear infinite;
+  pointer-events: none;
+  z-index: 999;
+}
+
+@keyframes scan {
+  0% { top: -200px; }
+  100% { top: 100vh; }
+}
+
+/* Glow text */
+.glow-text {
+  text-shadow: 0 0 30px rgba(255, 107, 53, 0.6), 0 0 60px rgba(255, 107, 53, 0.3);
+}
+
+/* Panel glassmorphism */
+.glass-panel {
+  background: rgba(13, 17, 23, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 107, 53, 0.12);
+}
+
+/* Accent border left */
+.border-accent-l {
+  border-left: 3px solid #ff6b35;
+}
+
+/* Animated number */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.count-animate {
+  animation: countUp 0.8s ease forwards;
+}
+
+/* Stagger children */
+.stagger > * {
+  animation: fadeUp 0.5s ease forwards;
+  opacity: 0;
+}
+.stagger > *:nth-child(1) { animation-delay: 0.1s; }
+.stagger > *:nth-child(2) { animation-delay: 0.2s; }
+.stagger > *:nth-child(3) { animation-delay: 0.3s; }
+.stagger > *:nth-child(4) { animation-delay: 0.4s; }
+.stagger > *:nth-child(5) { animation-delay: 0.5s; }
+.stagger > *:nth-child(6) { animation-delay: 0.6s; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Table row hover */
+.anime-row {
+  transition: background 0.2s, border-color 0.2s;
+  border-left: 2px solid transparent;
+}
+.anime-row:hover {
+  background: rgba(255, 107, 53, 0.05);
+  border-left-color: #ff6b35;
+}
+
+/* Progress bar */
+.progress-bar {
+  height: 3px;
+  background: linear-gradient(90deg, #ff6b35, #f4a261);
+  border-radius: 2px;
+  transition: width 1s ease;
+}
+
+/* Badge */
+.badge-ep {
+  background: rgba(255, 107, 53, 0.15);
+  color: #ff6b35;
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-family: var(--font-display);
+  letter-spacing: 1px;
+}
+
+/* Status badge */
+.badge-done {
+  background: rgba(74, 222, 128, 0.1);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.2);
+}
+.badge-watching {
+  background: rgba(251, 191, 36, 0.1);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+/* Login card */
+.login-card {
+  box-shadow: 0 0 0 1px rgba(255, 107, 53, 0.1), 0 20px 60px rgba(0,0,0,0.8), 0 0 80px rgba(255,107,53,0.05);
+}
+
+/* Input focus glow */
+.input-oni {
+  background: rgba(6, 9, 16, 0.8);
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.input-oni:focus {
+  outline: none;
+  border-color: #ff6b35;
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+}
+
+/* Corner decorations */
+.corner-tl::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 20px; height: 20px;
+  border-top: 2px solid #ff6b35;
+  border-left: 2px solid #ff6b35;
+}
+.corner-br::after {
+  content: '';
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 20px; height: 20px;
+  border-bottom: 2px solid #ff6b35;
+  border-right: 2px solid #ff6b35;
+}

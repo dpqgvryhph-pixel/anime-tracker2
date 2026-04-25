@@ -9,17 +9,36 @@
 <body>
   <div class="container">
     <div class="header">
-      <span>&#128250; OniAnime Tracker</span>
+      <span>&#40481; OniAnime Tracker</span>
+      <span class="version">v2.3</span>
     </div>
 
     <div class="section">
       <div class="title">JELENLEGI EP&#211;Z&#211;D</div>
-      <div class="row"><span>Anime:</span><span id="animeName" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px;" title="">-</span></div>
-      <div class="row" style="display:none;"><span>Show ID:</span><span id="showId">-</span></div>
-      <div class="row"><span>Epiz&#243;d:</span><span id="episode">-</span></div>
-      <div class="row"><span>Halad&#225;s:</span><span id="progress">-</span></div>
-      <div class="row"><span>Megn&#233;zve:</span><span id="watchStatus">-</span></div>
-      <div class="row"><span>Supabase:</span><span id="syncStatus">-</span></div>
+      <div class="row">
+        <span>Anime:</span>
+        <span id="animeName" class="truncate" title="">-</span>
+      </div>
+      <div class="row" style="display:none;">
+        <span>Show ID:</span>
+        <span id="showId">-</span>
+      </div>
+      <div class="row">
+        <span>Epiz&#243;d:</span>
+        <span id="episode">-</span>
+      </div>
+      <div class="row">
+        <span>Halad&#225;s:</span>
+        <span id="progress">-</span>
+      </div>
+      <div class="row">
+        <span>Megn&#233;zve:</span>
+        <span id="watchStatus">-</span>
+      </div>
+      <div class="row">
+        <span>Supabase:</span>
+        <span id="syncStatus">-</span>
+      </div>
     </div>
 
     <div class="section">
@@ -28,8 +47,17 @@
       <input type="password" id="key" placeholder="Anon Key">
       <button id="save">&#128190; Ment&#233;s</button>
       <button id="refresh">&#8635; Friss&#237;t&#233;s</button>
-      <button id="open-dashboard" style="margin-top: 10px; width: 100%; padding: 8px; background: #ff6b35; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">&#128200; Statisztikák (Dashboard)</button>
       <div id="msg"></div>
+    </div>
+
+    <div class="section dashboard-section">
+      <div class="title">DASHBOARD</div>
+      <p class="dashboard-desc">
+        Statisztik&#225;k, id&#336;m&#233;r&#233;s, befejezett anim&#233;k &#8212; a teljes dashboard online.
+      </p>
+      <input type="text" id="dashboard-url" placeholder="Dashboard URL (pl. https://onianime.vercel.app)">
+      <button id="save-dashboard-url" class="btn-secondary">&#128190; URL Ment&#233;se</button>
+      <button id="open-dashboard" class="btn-dashboard">&#128200; Megnyit&#225;s</button>
     </div>
   </div>
   <script src="popup.js"></script>
