@@ -10,10 +10,13 @@ function getServiceClient() {
   return createClient(url, key);
 }
 
+// Auth ellenőrzés: az oni_session cookie meghatározza az adminstátust
 async function checkAdminAuth(): Promise<boolean> {
   const cookieStore = cookies();
+  const session = cookieStore.get('oni_session');
   const auth = cookieStore.get('oni_auth');
-  return auth?.value === 'true';
+  // Bejelentkezve van, ha mindket cookie létezik és oni_session='valid'
+  return session?.value === 'valid' && !!auth?.value && auth.value.length > 10;
 }
 
 // GET /api/admin/users - Összes felhasználó listázása (csak olvasás)
@@ -31,36 +34,43 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return NextResponse.json({ data });
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : 'Ismeretlen hiba';
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ users: data || [] });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
 
-// POST /api/admin/users - Új felhasználó létrehozása (viewer role)
+// POST /api/admin/users - Új viewer felhasználó létrehozása
 export async function POST(request: NextRequest) {
   const isAdmin = await checkAdminAuth();
   if (!isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const body = await request.json().catch(() => null);
+  if (!body?.username) {
+    return NextResponse.json({ error: 'username kötelező' }, { status: 400 });
+  }
+
+  const { username, display_name } = body;
+
+  // Felhasználónév validáció
+  if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
+    return NextResponse.json(
+      { error: 'A felhasználónév 3-30 karakter, csak betű, szám, alulátáshúzott lehet' },
+      { status: 400 }
+    );
+  }
+
   try {
-    const { username, display_name } = await request.json();
-
-    if (!username || typeof username !== 'string' || username.trim().length < 2) {
-      return NextResponse.json({ error: 'Érvénytelen felhasználónév (min. 2 karakter)' }, { status: 400 });
-    }
-
-    const cleanUsername = username.trim().toLowerCase();
-
     const supabase = getServiceClient();
     const { data, error } = await supabase
       .from('users')
       .insert({
-        username: cleanUsername,
-        display_name: display_name?.trim() || cleanUsername,
-        role: 'viewer', // Új felhasználók mindig viewer jogkörrel
+        username,
+        display_name: display_name || username,
+        role: 'viewer', // Mindig viewer, admin nem hozhat létre admin-t
+        created_at: new Date().toISOString(),
       })
       .select('id, username, display_name, role, created_at')
       .single();
@@ -72,9 +82,33 @@ export async function POST(request: NextRequest) {
       throw error;
     }
 
-    return NextResponse.json({ data }, { status: 201 });
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : 'Ismeretlen hiba';
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ user: data }, { status: 201 });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
+
+// DELETE /api/admin/users?id=X - Felhasználó törlése (admin nem törölhető)
+export async function DELETE(request: NextRequest) {
+  const isAdmin = await checkAdminAuth();
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+  if (!id) return NextResponse.json({ error: 'id kötelező' }, { status: 400 });
+
+  try {
+    const supabase = getServiceClient();
+    // Admin nem törölhető
+    const { data: user } = await supabase.from('users').select('role').eq('id', id).single();
+    if (user?.role === 'admin') {
+      return NextResponse.json({ error: 'Admin felhasználó nem törölhető' }, { status: 403 });
+    }
+    await supabase.from('users').delete().eq('id', id);
+    return NextResponse.json({ success: true });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
