@@ -14,18 +14,35 @@
     
     <!-- Config Section (Ha nincs beállítva) -->
     <div id="config-section" class="panel">
-      <h2>Supabase Csatlakozás</h2>
-      <p style="text-align:center; color:var(--text-secondary); margin-bottom: 20px;">
-        Add meg a Supabase adataidat a statisztikák betöltéséhez!
+      <h2 id="login-title">Bejelentkezés</h2>
+      <p style="text-align:center; color:var(--text-secondary); margin-bottom: 20px;" id="login-desc">
+        Add meg a szükséges adatokat a statisztikákhoz!
       </p>
-      <div class="input-group">
-        <label>Project URL</label>
-        <input type="text" id="config-url" placeholder="https://xxx.supabase.co">
+      
+      <!-- Teljes bejelentkezés (ha nincs hardkódolva az adat) -->
+      <div id="full-login-fields">
+        <div class="input-group">
+          <label>Project URL</label>
+          <input type="text" id="config-url" placeholder="https://xxx.supabase.co">
+        </div>
+        <div class="input-group">
+          <label>Anon Key</label>
+          <input type="password" id="config-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+        </div>
       </div>
-      <div class="input-group">
-        <label>Anon Key</label>
-        <input type="password" id="config-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+
+      <!-- Egyszerűsített bejelentkezés (ha hardkódolva van) -->
+      <div id="simple-login-fields" style="display: none;">
+        <div class="input-group">
+          <label>Felhasználónév</label>
+          <input type="text" id="config-username" placeholder="Felhasználónév">
+        </div>
+        <div class="input-group">
+          <label>Jelszó</label>
+          <input type="password" id="config-password" placeholder="Add meg a jelszót">
+        </div>
       </div>
+
       <button class="btn-primary" id="btn-connect">Csatlakozás</button>
     </div>
 

@@ -1,19 +1,65 @@
+// === BEÁLLÍTÁSOK (Ha Vercelen futtatod, ide írd be az adataidat!) ===
+// Ha ezeket kitöltöd, a weboldalon már csak a jelszót fogja kérni!
+const CONFIG = {
+  SUPABASE_URL: "", // pl: "https://xxx.supabase.co"
+  SUPABASE_KEY: "", // pl: "eyJhb..."
+  USERNAME: "admin", // Ezzel a névvel tudsz majd belépni
+  PASSWORD: "anime" // Ezzel a jelszóval tudsz majd belépni
+};
+
 const configSection = document.getElementById('config-section');
 const dashboardSection = document.getElementById('dashboard-section');
 const loader = document.getElementById('loader');
 const content = document.getElementById('dashboard-content');
 
 let supabase = null;
+let isSimplifiedLogin = CONFIG.SUPABASE_URL !== "" && CONFIG.SUPABASE_KEY !== "";
 
 function init() {
-  const url = localStorage.getItem('supa_url');
-  const key = localStorage.getItem('supa_key');
+  // If running inside the extension, sync with background script
+  let extensionContext = false;
+  try {
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      extensionContext = true;
+      chrome.runtime.sendMessage({ type: 'GET_CONFIG' }, (config) => {
+        if (chrome.runtime.lastError) {
+          console.warn(chrome.runtime.lastError);
+          fallbackInit();
+          return;
+        }
+        const url = config?.url || localStorage.getItem('supa_url');
+        const key = config?.anonKey || localStorage.getItem('supa_key');
+        startDashboard(url, key);
+      });
+    }
+  } catch(e) {
+    console.warn("Nem extension környezetben futunk", e);
+    extensionContext = false;
+  }
   
+  if (!extensionContext) {
+    fallbackInit();
+  }
+}
+
+function fallbackInit() {
+  let url = localStorage.getItem('supa_url');
+  let key = localStorage.getItem('supa_key');
+  
+  if (isSimplifiedLogin && localStorage.getItem('dashboard_auth') === 'true') {
+    url = CONFIG.SUPABASE_URL;
+    key = CONFIG.SUPABASE_KEY;
+  }
+  
+  startDashboard(url, key);
+}
+
+function startDashboard(url, key) {
   if (url && key) {
-    configSection.style.display = 'none';
-    dashboardSection.style.display = 'block';
-    loader.style.display = 'block';
-    content.style.display = 'none';
+      configSection.style.display = 'none';
+      dashboardSection.style.display = 'block';
+      loader.style.display = 'block';
+      content.style.display = 'none';
     
     // Initialize Supabase Client
     try {
@@ -31,14 +77,44 @@ function init() {
       dashboardSection.style.display = 'none';
       localStorage.removeItem('supa_url');
       localStorage.removeItem('supa_key');
+      localStorage.removeItem('dashboard_auth');
+      try {
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+          chrome.runtime.sendMessage({ type: 'SAVE_CONFIG', url: '', anonKey: '' }, () => {
+             let err = chrome.runtime.lastError;
+          });
+        }
+      } catch(e){}
     }
   } else {
     configSection.style.display = 'flex';
     dashboardSection.style.display = 'none';
+    
+    if (isSimplifiedLogin) {
+      document.getElementById('full-login-fields').style.display = 'none';
+      document.getElementById('simple-login-fields').style.display = 'block';
+      document.getElementById('login-title').textContent = "Védett Statisztika";
+      document.getElementById('login-desc').textContent = "Jelentkezz be az adataidhoz!";
+    } else {
+      document.getElementById('full-login-fields').style.display = 'block';
+      document.getElementById('simple-login-fields').style.display = 'none';
+    }
   }
 }
 
 document.getElementById('btn-connect').addEventListener('click', () => {
+  if (isSimplifiedLogin) {
+    const user = document.getElementById('config-username').value.trim();
+    const pw = document.getElementById('config-password').value.trim();
+    if (user === CONFIG.USERNAME && pw === CONFIG.PASSWORD) {
+      localStorage.setItem('dashboard_auth', 'true');
+      init();
+    } else {
+      alert("Helytelen felhasználónév vagy jelszó!");
+    }
+    return;
+  }
+
   const url = document.getElementById('config-url').value.trim();
   const key = document.getElementById('config-key').value.trim();
   if (!url || !key) {
@@ -47,13 +123,38 @@ document.getElementById('btn-connect').addEventListener('click', () => {
   }
   localStorage.setItem('supa_url', url);
   localStorage.setItem('supa_key', key);
-  init();
+  
+  try {
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      chrome.runtime.sendMessage({ type: 'SAVE_CONFIG', url: url, anonKey: key }, () => {
+        let err = chrome.runtime.lastError;
+        init();
+      });
+    } else {
+      init();
+    }
+  } catch(e) {
+    init();
+  }
 });
 
 document.getElementById('btn-logout').addEventListener('click', () => {
   localStorage.removeItem('supa_url');
   localStorage.removeItem('supa_key');
-  init();
+  localStorage.removeItem('dashboard_auth');
+  
+  try {
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      chrome.runtime.sendMessage({ type: 'SAVE_CONFIG', url: '', anonKey: '' }, () => {
+        let err = chrome.runtime.lastError;
+        init();
+      });
+    } else {
+      init();
+    }
+  } catch(e) {
+    init();
+  }
 });
 
 function formatDate(dateStr) {

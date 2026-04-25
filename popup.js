@@ -81,4 +81,11 @@
       setTimeout(() => { m.textContent = ''; }, 2000);
     });
   };
+
+  const dashboardBtn = document.getElementById('open-dashboard');
+  if (dashboardBtn) {
+    dashboardBtn.onclick = () => {
+      chrome.tabs.create({ url: chrome.runtime.getURL('dashboard/index.html') });
+    };
+  }
 })();
