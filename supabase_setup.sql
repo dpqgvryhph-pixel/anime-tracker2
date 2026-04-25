@@ -1,4 +1,4 @@
--- OniAnime Tracker - Supabase Setup v2.0
+-- OniAnime Tracker - Supabase Setup v2.1
 -- BIZTONSÁGOS: nem törli a meglévő adatokat!
 -- Használd ezt Supabase SQL Editor-ban.
 
@@ -46,8 +46,13 @@ CREATE POLICY "anon_update_watched" ON watched_episodes
 CREATE POLICY "service_only_users" ON users
   FOR ALL TO service_role USING (true);
 
--- 4. RPC függvény: epizód nézés rögzítése (INSERT/UPDATE)
--- Visszaadja az aktuális sort JSON-ként
+-- 4. Meglévő NULL duration_minutes sorok javítása
+UPDATE watched_episodes
+  SET duration_minutes = 24
+  WHERE duration_minutes IS NULL OR duration_minutes = 0;
+
+-- 5. RPC függvény: epizód nézés rögzítése (INSERT/UPDATE)
+-- Explicit duration_minutes = 24 az INSERT-ben, hogy soha ne legyen NULL
 DROP FUNCTION IF EXISTS increment_watched_count(integer, integer, text);
 
 CREATE OR REPLACE FUNCTION increment_watched_count(
@@ -62,11 +67,12 @@ AS $$
 DECLARE
   result json;
 BEGIN
-  INSERT INTO watched_episodes (show_id, episode, anime_title, watched_count, first_watched, last_watched)
-  VALUES (p_show_id, p_episode, p_anime_title, 1, NOW(), NOW())
+  INSERT INTO watched_episodes (show_id, episode, anime_title, watched_count, duration_minutes, first_watched, last_watched)
+  VALUES (p_show_id, p_episode, p_anime_title, 1, 24, NOW(), NOW())
   ON CONFLICT (show_id, episode) DO UPDATE
     SET watched_count = watched_episodes.watched_count + 1,
         anime_title = COALESCE(EXCLUDED.anime_title, watched_episodes.anime_title),
+        duration_minutes = COALESCE(watched_episodes.duration_minutes, 24),
         last_watched = NOW()
   RETURNING row_to_json(watched_episodes.*) INTO result;
   RETURN result;
@@ -76,7 +82,7 @@ $$;
 GRANT EXECUTE ON FUNCTION increment_watched_count TO anon;
 GRANT EXECUTE ON FUNCTION increment_watched_count TO service_role;
 
--- 5. Schema reload
+-- 6. Schema reload
 NOTIFY pgrst, 'reload schema';
 
 -- ============================================
