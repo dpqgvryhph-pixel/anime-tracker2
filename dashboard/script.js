@@ -1,7 +1,8 @@
-// OniAnime Dashboard - Supabase config beegetve, nincs szükség manuális konfigurációra
+// OniAnime Dashboard - Supabase config beegetve
 const SUPABASE_URL = 'https://uctzsndnlmpsmniufrzg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjdHpzbmRubG1wc21uaXVmcnpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMTM5MTUsImV4cCI6MjA5MjY4OTkxNX0.anzOAGIclTRNtF8DwA6mqQIt0nSvAbwACGN76-rolHc';
-const DASHBOARD_PASSWORD = 'anime';
+const DASHBOARD_USERNAME = 'adminemma';
+const DASHBOARD_PASSWORD = 'adminanime';
 
 const configSection = document.getElementById('config-section');
 const dashboardSection = document.getElementById('dashboard-section');
@@ -11,7 +12,6 @@ const content = document.getElementById('dashboard-content');
 let supabaseClient = null;
 
 function init() {
-  // Ha már be van lépve (sessionStorage), egyből betöltünk
   if (sessionStorage.getItem('dashboard_auth') === 'true') {
     showDashboard();
   } else {
@@ -22,15 +22,10 @@ function init() {
 function showLogin() {
   configSection.style.display = 'flex';
   dashboardSection.style.display = 'none';
-  // Elrejtünk mindent ami nem kell, csak a jelszavás bejelentkezés marad
-  const fullFields = document.getElementById('full-login-fields');
-  const simpleFields = document.getElementById('simple-login-fields');
-  if (fullFields) fullFields.style.display = 'none';
-  if (simpleFields) simpleFields.style.display = 'block';
-  const loginTitle = document.getElementById('login-title');
-  const loginDesc = document.getElementById('login-desc');
-  if (loginTitle) loginTitle.textContent = 'OniAnime Statisztika';
-  if (loginDesc) loginDesc.textContent = 'Add meg a jelszavát a belépéshez!';
+  document.getElementById('full-login-fields').style.display = 'none';
+  document.getElementById('simple-login-fields').style.display = 'block';
+  document.getElementById('login-title').textContent = 'OniAnime Statisztika';
+  document.getElementById('login-desc').textContent = 'Jelentkezz be a statisztikáidhoz!';
 }
 
 function showDashboard() {
@@ -38,7 +33,6 @@ function showDashboard() {
   dashboardSection.style.display = 'block';
   loader.style.display = 'block';
   content.style.display = 'none';
-
   try {
     if (!window.supabase) throw new Error('Supabase könyvtár nem töltődött be!');
     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -50,26 +44,23 @@ function showDashboard() {
   }
 }
 
-// Bejelentkezés gomb
 document.getElementById('btn-connect').addEventListener('click', () => {
-  const pw = document.getElementById('config-password');
-  if (!pw) return;
-  if (pw.value.trim() === DASHBOARD_PASSWORD) {
+  const user = document.getElementById('config-username').value.trim();
+  const pw = document.getElementById('config-password').value.trim();
+  if (user === DASHBOARD_USERNAME && pw === DASHBOARD_PASSWORD) {
     sessionStorage.setItem('dashboard_auth', 'true');
     showDashboard();
   } else {
-    alert('Helytelen jelszó!');
+    alert('Helytelen felhasználónév vagy jelszó!');
   }
 });
 
-// Enter gomb támogatása a jelszó mezőben
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && configSection.style.display !== 'none') {
     document.getElementById('btn-connect').click();
   }
 });
 
-// Kijelentkezés
 document.getElementById('btn-logout').addEventListener('click', () => {
   sessionStorage.removeItem('dashboard_auth');
   showLogin();
@@ -96,7 +87,6 @@ async function loadData() {
       .from('watched_episodes')
       .select('*')
       .order('last_watched', { ascending: false });
-
     if (error) throw error;
 
     loader.style.display = 'none';
@@ -131,7 +121,6 @@ async function loadData() {
     document.getElementById('stat-total-shows').textContent = Object.keys(showsMap).length;
     document.getElementById('stat-this-week').textContent = epsThisWeek;
 
-    // Legutóbbi epizódok
     const tbody = document.getElementById('recent-tbody');
     tbody.innerHTML = '';
     data.slice(0, 10).forEach(row => {
@@ -144,7 +133,6 @@ async function loadData() {
       tbody.appendChild(tr);
     });
 
-    // Legtöbbször nézett animék
     const showsTbody = document.getElementById('shows-tbody');
     showsTbody.innerHTML = '';
     Object.entries(showsMap)

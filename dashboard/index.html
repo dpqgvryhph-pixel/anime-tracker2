@@ -15,13 +15,17 @@
     <div id="config-section" class="panel">
       <h2 id="login-title">OniAnime Statisztika</h2>
       <p style="text-align:center; color:var(--text-secondary); margin-bottom:20px;" id="login-desc">
-        Add meg a jelszavát a belépéshez!
+        Jelentkezz be a statisztikáidhoz!
       </p>
       <div id="full-login-fields" style="display:none;"></div>
       <div id="simple-login-fields">
         <div class="input-group">
+          <label>Felhasználónév</label>
+          <input type="text" id="config-username" placeholder="Felhasználónév" autofocus autocomplete="username">
+        </div>
+        <div class="input-group">
           <label>Jelszó</label>
-          <input type="password" id="config-password" placeholder="Jelszó" autofocus>
+          <input type="password" id="config-password" placeholder="Jelszó" autocomplete="current-password">
         </div>
       </div>
       <button class="btn-primary" id="btn-connect">Belépés</button>
