@@ -3,6 +3,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import ThemeSettings from '../ThemeSettings';
 
+const DEFAULT_DURATION = 24; // percek egy átlagos anime epizódhoz
+
 interface WatchedEpisode {
   id: number;
   show_id: number;
@@ -56,7 +58,7 @@ export default function DashboardPage() {
     });
 
   const totalEpisodes = data.reduce((s, d) => s + (d.watched_count || 0), 0);
-  const totalMinutes = data.reduce((s, d) => s + ((d.duration_minutes || 0) * (d.watched_count || 0)), 0);
+  const totalMinutes = data.reduce((s, d) => s + ((d.duration_minutes || DEFAULT_DURATION) * (d.watched_count || 0)), 0);
   const totalHours = Math.floor(totalMinutes / 60);
   const remainingMinutes = totalMinutes % 60;
 
@@ -197,7 +199,8 @@ export default function DashboardPage() {
         <div className="grid gap-3 fade-in">
           {filtered.map((item, index) => {
             const episodePercent = item.episode > 0 ? Math.min((item.watched_count / item.episode) * 100, 100) : 0;
-            const itemMinutes = (item.duration_minutes || 0) * (item.watched_count || 0);
+            const itemDuration = item.duration_minutes || DEFAULT_DURATION;
+            const itemMinutes = itemDuration * (item.watched_count || 0);
             const itemHours = Math.floor(itemMinutes / 60);
             const itemMins = itemMinutes % 60;
             const timeStr = itemHours > 0 ? `${itemHours}ó ${itemMins}p` : `${itemMins}p`;
