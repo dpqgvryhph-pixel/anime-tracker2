@@ -10,7 +10,7 @@
   <div class="container">
     <div class="header">
       <span>&#40481; OniAnime Tracker</span>
-      <span class="version">v2.3</span>
+      <span class="version">v3.0</span>
     </div>
 
     <div class="section">
@@ -18,10 +18,6 @@
       <div class="row">
         <span>Anime:</span>
         <span id="animeName" class="truncate" title="">-</span>
-      </div>
-      <div class="row" style="display:none;">
-        <span>Show ID:</span>
-        <span id="showId">-</span>
       </div>
       <div class="row">
         <span>Epiz&#243;d:</span>
@@ -41,23 +37,9 @@
       </div>
     </div>
 
-    <div class="section">
-      <div class="title">SUPABASE BE&#193;LL&#205;T&#193;S</div>
-      <input type="text" id="url" placeholder="Project URL (https://xxx.supabase.co)">
-      <input type="password" id="key" placeholder="Anon Key">
-      <button id="save">&#128190; Ment&#233;s</button>
-      <button id="refresh">&#8635; Friss&#237;t&#233;s</button>
+    <div class="section" style="text-align:center;">
+      <button id="refresh" style="width:100%;">&#8635; Friss&#237;t&#233;s</button>
       <div id="msg"></div>
-    </div>
-
-    <div class="section dashboard-section">
-      <div class="title">DASHBOARD</div>
-      <p class="dashboard-desc">
-        Statisztik&#225;k, id&#336;m&#233;r&#233;s, befejezett anim&#233;k &#8212; a teljes dashboard online.
-      </p>
-      <input type="text" id="dashboard-url" placeholder="Dashboard URL (pl. https://onianime.vercel.app)">
-      <button id="save-dashboard-url" class="btn-secondary">&#128190; URL Ment&#233;se</button>
-      <button id="open-dashboard" class="btn-dashboard">&#128200; Megnyit&#225;s</button>
     </div>
   </div>
   <script src="popup.js"></script>

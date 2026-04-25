@@ -1,26 +1,16 @@
 // OniAnime Tracker - Background Service Worker
-let state = {
-  supabase: { url: '', anonKey: '' }
-};
-
-async function loadConfig() {
-  const result = await chrome.storage.local.get(['supabaseUrl', 'supabaseAnonKey']);
-  state.supabase.url = result.supabaseUrl || '';
-  state.supabase.anonKey = result.supabaseAnonKey || '';
-}
+// Supabase config hardcoded - nincs szükség manuális beállításra
+const SUPABASE_URL = 'https://uctzsndnlmpsmniufrzg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjdHpzbmRubG1wc21uaXVmcnpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMTM5MTUsImV4cCI6MjA5MjY4OTkxNX0.anzOAGIclTRNtF8DwA6mqQIt0nSvAbwACGN76-rolHc';
 
 async function sendToSupabase(showId, episode, animeName) {
-  if (!state.supabase.url || !state.supabase.anonKey) {
-    console.log('[OniAnime] Supabase nincs konfigurálva');
-    return { success: false, error: 'Konfig hiányzik' };
-  }
   try {
-    const response = await fetch(`${state.supabase.url}/rest/v1/rpc/increment_watched_count`, {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_watched_count`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': state.supabase.anonKey,
-        'Authorization': `Bearer ${state.supabase.anonKey}`
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
       },
       body: JSON.stringify({
         p_show_id: parseInt(showId),
@@ -43,26 +33,7 @@ async function sendToSupabase(showId, episode, animeName) {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'EPISODE_WATCHED') {
-    loadConfig().then(() => {
-      sendToSupabase(message.showId, message.episode, message.animeName).then(sendResponse);
-    });
-    return true;
-  }
-  if (message.type === 'SAVE_CONFIG') {
-    chrome.storage.local.set({
-      supabaseUrl: message.url,
-      supabaseAnonKey: message.anonKey
-    }).then(() => {
-      state.supabase.url = message.url;
-      state.supabase.anonKey = message.anonKey;
-      sendResponse({ success: true });
-    });
-    return true;
-  }
-  if (message.type === 'GET_CONFIG') {
-    loadConfig().then(() => sendResponse(state.supabase));
+    sendToSupabase(message.showId, message.episode, message.animeName).then(sendResponse);
     return true;
   }
 });
-
-loadConfig();

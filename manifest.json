@@ -1,11 +1,12 @@
 {
   "manifest_version": 3,
   "name": "OniAnime Tracker",
-  "version": "2.3",
-  "description": "Automatikusan követi a megnézett anime részeket az onianime.hu-n",
+  "version": "3.0",
+  "description": "Automatikusan k\u00f6veti a megn\u00e9zett anime r\u00e9szeket az onianime.hu-n",
   "permissions": ["storage", "tabs"],
   "host_permissions": [
-    "https://onianime.hu/*"
+    "https://onianime.hu/*",
+    "https://uctzsndnlmpsmniufrzg.supabase.co/*"
   ],
   "background": {
     "service_worker": "background.js"
