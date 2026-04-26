@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // @cloudflare/next-on-pages adapter szükséges a Cloudflare Pages deployhoz
-  // Build command: npx @cloudflare/next-on-pages@1
-  // Build output: .vercel/output/static
+  output: 'export',  // Statikus HTML/CSS/JS export - Cloudflare Pages statikusan szolgálja
+  trailingSlash: true,
+  images: { unoptimized: true },
 };
 
 module.exports = nextConfig;
