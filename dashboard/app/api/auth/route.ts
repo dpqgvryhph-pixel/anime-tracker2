@@ -1,7 +1,7 @@
+export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
-import { randomBytes } from 'crypto';
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
   if (username === validUser && password === validPass) {
     // Biztonságos véletlenszerű session token generálása
-    const sessionToken = randomBytes(32).toString('hex');
+    const sessionToken = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('');
     
     const cookieStore = cookies();
     cookieStore.set('oni_auth', sessionToken, {
