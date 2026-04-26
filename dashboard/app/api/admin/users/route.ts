@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 // Admin API: Felhasználók kezelése (csak admin role-hoz)
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
