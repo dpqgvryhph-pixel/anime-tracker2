@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',  // Statikus HTML/CSS/JS export - Cloudflare Pages statikusan szolgálja
+  // output: 'export' ELTAVOLITVA - @cloudflare/next-on-pages nem kompatibilis ezzel
+  // A CF Pages build: npx @cloudflare/next-on-pages@1
   trailingSlash: true,
   images: { unoptimized: true },
 };
