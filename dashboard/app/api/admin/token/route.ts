@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 // GET /api/admin/token - Visszaadja az EXTENSION_API_TOKEN értékét (csak adminnak)
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
