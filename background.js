@@ -3,7 +3,7 @@
 // Minden logika (számláló, statisztika, frissítés) a weben történik.
 // Így az extension nem igényel GitHub-frissítést, ha a backend változik.
 
-const API_BASE = 'https://onianime-tracker2.vercel.app';
+const API_BASE = 'https://onianime-tracker2.pages.dev';
 
 // Az API token a Supabase-ből kerül lekérésre bejelentkezéskor,
 // vagy a felhasználó beállítja popup-ban egyszer.
