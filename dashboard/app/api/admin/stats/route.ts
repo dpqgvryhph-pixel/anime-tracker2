@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 // Admin API: Összegésítő statisztikák
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
