@@ -1,4 +1,3 @@
-export const runtime = 'edge';
 // POST /api/sync - Extension által hívott endpoint
 // Az extension elküldi az epizód adatait, a weboldal menti Supabase-be.
 // Így az extension nem függ a Supabase-től közvetlenul.
