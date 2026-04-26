@@ -16,19 +16,17 @@ export async function POST(request: NextRequest) {
   }
 
   if (username === validUser && password === validPass) {
-    // Biztonságos véletlenszerű session token generálása
-    const sessionToken = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('');
+    const sessionToken = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
     
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     cookieStore.set('oni_auth', sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 nap
+      maxAge: 60 * 60 * 24 * 7,
       path: '/',
     });
-    // Session token tárolása (egyszerűsített: env-ben tárolt token-nel is elfogadja)
-    // A valódi ellenőrzés: ha a cookie létezik és nem üres, admin
     cookieStore.set('oni_session', 'valid', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -37,7 +35,6 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
 
-    // Admin felhasználó last_login frissítése Supabase-ben
     const supabaseUrl = process.env.SUPABASE_URL;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (supabaseUrl && serviceKey) {
@@ -48,20 +45,19 @@ export async function POST(request: NextRequest) {
           { onConflict: 'username' }
         );
       } catch (e) {
-        console.warn('[auth] Supabase users update failed (nem kritíkus):', e);
+        console.warn('[auth] Supabase users update failed:', e);
       }
     }
 
     return NextResponse.json({ success: true, role: 'admin' });
   }
 
-  // Helytelen belépés - kis késleltetés brute force ellen
   await new Promise(r => setTimeout(r, 500));
   return NextResponse.json({ error: 'Hibás felhasználónév vagy jelszó' }, { status: 401 });
 }
 
 export async function DELETE() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   cookieStore.delete('oni_auth');
   cookieStore.delete('oni_session');
   return NextResponse.json({ success: true });

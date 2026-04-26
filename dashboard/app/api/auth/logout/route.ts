@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
 export async function POST() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   cookieStore.delete('oni_auth');
+  cookieStore.delete('oni_session');
   return NextResponse.json({ success: true });
 }

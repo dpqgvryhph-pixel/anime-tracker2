@@ -5,8 +5,7 @@ import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request: NextRequest) {
-  // Új session-alapú cookie ellenőrzés
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const session = cookieStore.get('oni_session');
   const auth = cookieStore.get('oni_auth');
   const isAdmin = session?.value === 'valid' && !!auth?.value && auth.value.length > 10;

@@ -4,10 +4,9 @@ import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request: NextRequest) {
-  // Auth check
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const auth = cookieStore.get('oni_auth');
-    if (!auth || auth.value.length <= 10) {
+  if (!auth || auth.value.length <= 10) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

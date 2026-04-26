@@ -11,16 +11,13 @@ function getServiceClient() {
   return createClient(url, key);
 }
 
-// Auth ellenőrzés: az oni_session cookie meghatározza az adminstátust
 async function checkAdminAuth(): Promise<boolean> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const session = cookieStore.get('oni_session');
   const auth = cookieStore.get('oni_auth');
-  // Bejelentkezve van, ha mindket cookie létezik és oni_session='valid'
   return session?.value === 'valid' && !!auth?.value && auth.value.length > 10;
 }
 
-// GET /api/admin/users - Összes felhasználó listázása (csak olvasás)
 export async function GET(request: NextRequest) {
   const isAdmin = await checkAdminAuth();
   if (!isAdmin) {
@@ -41,7 +38,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/admin/users - Új viewer felhasználó létrehozása
 export async function POST(request: NextRequest) {
   const isAdmin = await checkAdminAuth();
   if (!isAdmin) {
@@ -55,10 +51,9 @@ export async function POST(request: NextRequest) {
 
   const { username, display_name } = body;
 
-  // Felhasználónév validáció
   if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
     return NextResponse.json(
-      { error: 'A felhasználónév 3-30 karakter, csak betű, szám, alulátáshúzott lehet' },
+      { error: 'A felhasználónév 3-30 karakter, csak betű, szám, alulátáshúzójel lehet' },
       { status: 400 }
     );
   }
@@ -70,7 +65,7 @@ export async function POST(request: NextRequest) {
       .insert({
         username,
         display_name: display_name || username,
-        role: 'viewer', // Mindig viewer, admin nem hozhat létre admin-t
+        role: 'viewer',
         created_at: new Date().toISOString(),
       })
       .select('id, username, display_name, role, created_at')
@@ -89,7 +84,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE /api/admin/users?id=X - Felhasználó törlése (admin nem törölhető)
 export async function DELETE(request: NextRequest) {
   const isAdmin = await checkAdminAuth();
   if (!isAdmin) {
@@ -102,7 +96,6 @@ export async function DELETE(request: NextRequest) {
 
   try {
     const supabase = getServiceClient();
-    // Admin nem törölhető
     const { data: user } = await supabase.from('users').select('role').eq('id', id).single();
     if (user?.role === 'admin') {
       return NextResponse.json({ error: 'Admin felhasználó nem törölhető' }, { status: 403 });
