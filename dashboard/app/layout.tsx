@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from '../lib/ThemeProvider';
+import ThemeSettings from './ThemeSettings';
 
 export const metadata: Metadata = {
   title: 'Anime Tracker',
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="grid-bg scanlines">
         <ThemeProvider>
           {children}
+          <ThemeSettings />
         </ThemeProvider>
       </body>
     </html>

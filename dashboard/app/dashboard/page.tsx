@@ -42,6 +42,7 @@ export default function DashboardPage() {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'last_watched' | 'anime_title' | 'watched_count'>('last_watched');
   const [mounted, setMounted] = useState(false);
+  const [lastSync, setLastSync] = useState<Date | null>(null);
   const router = useRouter();
 
   useEffect(() => { setMounted(true); }, []);
@@ -54,6 +55,7 @@ export default function DashboardPage() {
       if (res.status === 401) { router.push('/'); return; }
       const json = await res.json();
       setData(json.data || []);
+      setLastSync(new Date());
     } catch {
       setError('Hiba a betoltes koren');
     } finally {
@@ -61,7 +63,14 @@ export default function DashboardPage() {
     }
   }, [router]);
 
-  useEffect(() => { if (mounted) loadData(); }, [mounted, loadData]);
+  useEffect(() => { 
+    if (mounted) {
+      loadData();
+      // Auto-refresh 10 másodpercenként a folyamatos sync érzetéért
+      const interval = setInterval(loadData, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [mounted, loadData]);
 
   const filtered = data
     .filter(d => !search || (d.anime_title || '').toLowerCase().includes(search.toLowerCase()))
@@ -93,12 +102,22 @@ export default function DashboardPage() {
               <span className="ml-2 text-xs text-white/30 font-medium uppercase tracking-widest">Dashboard</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
+            {/* Live Sync Status */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10" title={lastSync ? `Utolsó szinkronizáció: ${lastSync.toLocaleTimeString()}` : 'Várakozás...'}>
+              <div className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              </div>
+              <span className="text-xs font-semibold text-emerald-400/90 tracking-wide uppercase">Live Sync</span>
+            </div>
+
+            <div className="flex items-center gap-2">
             <button
               onClick={loadData}
               className="px-4 py-2 text-sm text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-all flex items-center gap-2"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
               Frissites
@@ -115,6 +134,7 @@ export default function DashboardPage() {
             >
               Kilepes
             </button>
+            </div>
           </div>
         </div>
       </nav>
