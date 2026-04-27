@@ -3,7 +3,7 @@
 ## Projekt felépítése
 
 ```
-onianime-dashboard/   ← Next.js weboldal (Vercel-re megy)
+onianime-dashboard/   ← Next.js weboldal (Cloudflare Pages-re megy)
 onianime-extension/   ← Chrome bővítmény
 supabase_setup.sql    ← Supabase adatbázis séma
 ```
@@ -22,7 +22,7 @@ supabase_setup.sql    ← Supabase adatbázis séma
 
 ---
 
-## 2. WEBOLDAL — GITHUB + VERCEL DEPLOY
+## 2. WEBOLDAL — GITHUB + CLOUDFLARE PAGES DEPLOY
 
 ### 2a. GitHub repo létrehozása
 
@@ -30,11 +30,12 @@ supabase_setup.sql    ← Supabase adatbázis séma
 2. Töltsd fel az `onianime-dashboard/` mappa tartalmát
 3. **FONTOS**: A `.env` fájlt ne töltsd fel! (`.gitignore` már tartalmazza)
 
-### 2b. Vercel Deploy
+### 2b. Cloudflare Pages Deploy
 
-1. Menj ide: https://vercel.com → Jelentkezz be GitHub-bal
-2. "New Project" → Válaszd ki a GitHub repo-dat
-3. **Environment Variables** beállítása (KÖTELEZŐ):
+1. Menj ide: https://dash.cloudflare.com/ → Pages and Workers → Create an application → Pages → Connect to Git
+2. Válaszd ki a GitHub repo-dat
+3. Framework preset: Next.js (Edge) vagy használd a `wrangler.toml`-t.
+4. **Environment Variables** beállítása (KÖTELEZŐ):
 
    | Változó neve | Értéke |
    |---|---|
@@ -43,11 +44,11 @@ supabase_setup.sql    ← Supabase adatbázis séma
    | `DASHBOARD_USERNAME` | `sajat_felhasznalonev` |
    | `DASHBOARD_PASSWORD` | `sajat_jelszo` |
 
-4. Kattints **Deploy**-ra
-5. A weboldal elérhető lesz pl. `https://onianime-dashboard.vercel.app`
+5. Kattints **Save and Deploy**-ra
+6. A weboldal elérhető lesz pl. `https://onianime-dashboard.pages.dev`
 
 ### 2c. Egyedi domain (opcionális)
-- Vercel → Project Settings → Domains → Add domain
+- Cloudflare Pages → Custom Domains → Set up a custom domain
 
 ---
 
@@ -66,7 +67,7 @@ supabase_setup.sql    ← Supabase adatbázis séma
    - Project URL-t
    - Anon Key-t
    - Kattints **💾 Mentés**
-3. **DASHBOARD** részbe írd be a Vercel URL-t (pl. `https://onianime.vercel.app`)
+3. **DASHBOARD** részbe írd be a Cloudflare Pages URL-t (pl. `https://onianime-tracker.pages.dev`)
 4. Kattints **💾 URL Mentése**
 5. A **📊 Megnyitás** gombbal nyithatsz be a dashboardra
 
@@ -84,7 +85,7 @@ supabase_setup.sql    ← Supabase adatbázis séma
 
 ## 5. BIZTONSÁG
 
-- A **jelszó soha nem kerül a kódba** — csak Vercel Environment Variables-ban van
+- A **jelszó soha nem kerül a kódba** — csak Cloudflare Pages Environment Variables-ban van
 - A Supabase kulcsok is csak szerver oldalon futnak (nem látja a böngésző)
 - A `.env` fájl a `.gitignore`-ban van, nem kerül fel GitHub-ra
 - A bejelentkezési cookie httpOnly és secure módban van
@@ -93,10 +94,10 @@ supabase_setup.sql    ← Supabase adatbázis séma
 
 ## Hibaelhárítás
 
-**"Supabase nincs konfigurálva"** → Ellenőrizd a Vercel ENV változókat
+**"Supabase nincs konfigurálva"** → Ellenőrizd a Cloudflare Pages ENV változókat
 
-**"Hibás felhasználónév vagy jelszó"** → Ellenőrizd a `DASHBOARD_USERNAME` / `DASHBOARD_PASSWORD` értékeket Vercelen
+**"Hibás felhasználónév vagy jelszó"** → Ellenőrizd a `DASHBOARD_USERNAME` / `DASHBOARD_PASSWORD` értékeket Cloudflare-en
 
 **Bővítmény nem szinkronizál** → Ellenőrizd a Supabase URL-t és kulcsot a popup-ban
 
-**Dashboard nem tölt be** → Ellenőrizd hogy a Vercel deploy sikeres volt-e
+**Dashboard nem tölt be** → Ellenőrizd hogy a Cloudflare deploy sikeres volt-e
