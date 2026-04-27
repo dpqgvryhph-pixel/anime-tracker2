@@ -66,13 +66,29 @@
     nameEl.textContent = animeName;
     nameEl.title = animeName;
 
-    // Lokális megnézési szám
-    const key = `wc_${showId}_${episode}`;
-    chrome.storage.local.get([key], r => {
-      const c = r[key] || 0;
-      const el = document.getElementById('watchStatus');
-      el.textContent = c > 0 ? `✓ Megnézve (${c}x)` : '✗ Nincs';
-      el.style.color = c > 0 ? '#4ade80' : '#f87171';
+    // Státusz lekérése a webes API-ról
+    const el = document.getElementById('watchStatus');
+    el.textContent = 'Betöltés...';
+    el.style.color = '#94a3b8';
+
+    chrome.runtime.sendMessage({ type: 'CHECK_EPISODE_STATUS', showId, episode }, (res) => {
+      if (res && res.success && res.data && res.data.watched) {
+        const c = res.data.data.watched_count || 1;
+        el.textContent = `✓ Megnézve (${c}x) [Web]`;
+        el.style.color = '#4ade80';
+        
+        // Frissítjük a lokális cache-t is
+        const key = `wc_${showId}_${episode}`;
+        chrome.storage.local.set({ [key]: c });
+      } else {
+        // Fallback lokális cache-re, ha a web nem válaszol vagy nincs meg
+        const key = `wc_${showId}_${episode}`;
+        chrome.storage.local.get([key], r => {
+          const c = r[key] || 0;
+          el.textContent = c > 0 ? `✓ Megnézve (${c}x) [Lokális]` : '✗ Nincs';
+          el.style.color = c > 0 ? '#fbbf24' : '#f87171';
+        });
+      }
     });
 
     // Offline sor

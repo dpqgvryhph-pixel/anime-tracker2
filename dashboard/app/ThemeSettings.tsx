@@ -7,10 +7,15 @@ const THEMES: { id: Theme; label: string; icon: string }[] = [
   { id: 'modern', label: 'Modern', icon: '✨' },
   { id: 'win95', label: 'Win95', icon: '🖥️' },
   { id: 'ps1', label: 'PS1', icon: '🎮' },
+  { id: 'custom', label: 'Egyedi', icon: '🛠️' },
 ];
 
 export default function ThemeSettings() {
-  const { theme, setTheme, bgImage, setBgImage, accentColor, setAccentColor } = useTheme();
+  const { 
+    theme, setTheme, bgImage, setBgImage, accentColor, setAccentColor,
+    fontFamily, setFontFamily, glassBlur, setGlassBlur, cardOpacity, setCardOpacity, borderRadius, setBorderRadius
+  } = useTheme();
+  
   const [open, setOpen] = useState(false);
   const [bgUrl, setBgUrl] = useState(bgImage);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -49,7 +54,7 @@ export default function ThemeSettings() {
 
       {open && (
         <div
-          className="fixed bottom-20 right-4 z-50 glass-panel p-6 rounded-xl w-80 shadow-2xl"
+          className="fixed bottom-20 right-4 z-50 glass-panel p-6 rounded-xl w-80 shadow-2xl overflow-y-auto max-h-[80vh]"
           style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border)' }}
         >
           {/* Theme name */}
@@ -106,7 +111,7 @@ export default function ThemeSettings() {
                 value={bgUrl.startsWith('data:') ? '' : bgUrl}
                 onChange={(e) => setBgUrl(e.target.value)}
                 placeholder="URL..."
-                className="input-oni flex-1 text-xs"
+                className="input-oni flex-1 text-xs px-2"
               />
               <button
                 onClick={applyBgUrl}
@@ -135,9 +140,51 @@ export default function ThemeSettings() {
             <input ref={fileRef} type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
           </div>
 
+          {/* Advanced Custom Settings */}
+          {theme === 'custom' && (
+            <div className="mt-4 pt-4 border-t border-[var(--t-border)]">
+              <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--t-dim)' }}>🔧 Egyedi beállítások</h4>
+              
+              <div className="mb-3">
+                <label className="text-xs flex justify-between mb-1" style={{ color: 'var(--t-text)' }}>
+                  <span>Üveg homályosítás (Blur)</span>
+                  <span>{glassBlur}px</span>
+                </label>
+                <input type="range" min="0" max="40" value={glassBlur} onChange={(e) => setGlassBlur(Number(e.target.value))} className="w-full" />
+              </div>
+
+              <div className="mb-3">
+                <label className="text-xs flex justify-between mb-1" style={{ color: 'var(--t-text)' }}>
+                  <span>Kártya átlátszóság</span>
+                  <span>{Math.round(cardOpacity * 100)}%</span>
+                </label>
+                <input type="range" min="0" max="1" step="0.05" value={cardOpacity} onChange={(e) => setCardOpacity(Number(e.target.value))} className="w-full" />
+              </div>
+
+              <div className="mb-3">
+                <label className="text-xs flex justify-between mb-1" style={{ color: 'var(--t-text)' }}>
+                  <span>Lekerekítés (Radius)</span>
+                  <span>{borderRadius}px</span>
+                </label>
+                <input type="range" min="0" max="32" value={borderRadius} onChange={(e) => setBorderRadius(Number(e.target.value))} className="w-full" />
+              </div>
+
+              <div className="mb-3">
+                <label className="text-xs mb-1 block" style={{ color: 'var(--t-text)' }}>Betűtípus (Font)</label>
+                <input 
+                  type="text" 
+                  value={fontFamily} 
+                  onChange={(e) => setFontFamily(e.target.value)} 
+                  className="input-oni w-full text-xs p-1"
+                  placeholder="pl. 'Inter', 'Outfit', monospace"
+                />
+              </div>
+            </div>
+          )}
+
           <button
             onClick={() => setOpen(false)}
-            className="w-full py-2 rounded-lg text-sm font-semibold mt-2"
+            className="w-full py-2 rounded-lg text-sm font-semibold mt-4"
             style={{ background: 'var(--t-surface-2)', color: 'var(--t-dim)' }}
           >
             Bezár

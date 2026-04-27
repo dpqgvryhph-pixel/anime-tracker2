@@ -90,6 +90,25 @@
   --t-win-border: none;
 }
 
+/* --- CUSTOM / EGYEDI --- */
+[data-theme="custom"] {
+  --t-bg: #121212;
+  --t-surface: rgba(255,255,255,0.05);
+  --t-surface-2: rgba(255,255,255,0.1);
+  --t-border: rgba(255,255,255,0.1);
+  /* Accent comes from JS */
+  --t-text: #ffffff;
+  --t-dim: #a1a1aa;
+  --t-muted: #52525b;
+  /* Font, radius, card-opacity blur comes from JS */
+  --t-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  --t-header-bg: rgba(0,0,0,0.5);
+  --t-card-bg: rgba(20,20,20, var(--t-card-opacity, 0.9));
+  --t-input-bg: rgba(255,255,255,0.05);
+  --t-scanline: 0;
+  --t-win-border: none;
+}
+
 /* ============================================================
    ALAP STILUS
    ============================================================ */
@@ -146,10 +165,10 @@ body.scanlines::before {
 .glass-panel {
   background: var(--t-card-bg);
   border: 1px solid var(--t-border);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(var(--t-blur, 12px));
   border-radius: var(--t-radius);
   box-shadow: var(--t-shadow);
-  transition: background 0.3s, border 0.3s;
+  transition: background 0.3s, border 0.3s, backdrop-filter 0.3s, border-radius 0.3s;
 }
 
 /* Input alap */

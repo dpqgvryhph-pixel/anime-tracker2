@@ -102,6 +102,17 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     });
     return true;
   }
+  if (msg.type === 'CHECK_EPISODE_STATUS') {
+    getApiToken().then(token => {
+      if (!token) return sendResponse({ success: false, error: 'no_token' });
+      fetch(`${API_BASE}/api/sync?show_id=${msg.showId}&episode=${msg.episode}`, {
+        headers: { 'X-Oni-Token': token }
+      }).then(r => r.json())
+        .then(data => sendResponse({ success: true, data }))
+        .catch(e => sendResponse({ success: false, error: e.message }));
+    });
+    return true;
+  }
 });
 
 // 5 percenként feldolgozza az offline sort
