@@ -11,14 +11,16 @@
     <button id="refresh" class="refresh-btn" title="Frissítés">↻</button>
   </div>
 
-  <!-- Token beállítás panel -->
+  <!-- Bejelentkezés panel -->
   <div id="tokenPanel" class="token-panel" style="display:none">
-    <div class="token-warning">⚠ API token hiányzik!</div>
-    <p class="token-hint">Nyisd meg a dashboardot és másold be a tokent:</p>
-    <div class="token-input-row">
-      <input id="tokenInput" type="password" placeholder="oni_xxxxxxxxxxxxxxxx" class="token-input" />
-      <button id="saveToken" class="save-btn">Mentés</button>
+    <div class="token-warning">🔒 Bejelentkezés szükséges</div>
+    <p class="token-hint">Add meg a webes dashboardhoz használt adataidat:</p>
+    <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px;">
+      <input id="usernameInput" type="text" placeholder="Felhasználónév (pl. admin)" class="token-input" />
+      <input id="passwordInput" type="password" placeholder="Jelszó" class="token-input" />
+      <button id="saveToken" class="save-btn" style="width: 100%; margin-left: 0;">Bejelentkezés</button>
     </div>
+    <p id="loginError" style="color: #f87171; font-size: 11px; display: none; text-align: center; margin-bottom: 10px;"></p>
     <a href="https://onianime-tracker2.pages.dev/dashboard" target="_blank" class="dashboard-link">
       🌐 Dashboard megnyitása →
     </a>
@@ -53,7 +55,7 @@
       <a href="https://onianime-tracker2.pages.dev/dashboard" target="_blank" class="dashboard-link-small">
         🌐 Dashboard
       </a>
-      <button id="resetToken" class="reset-token-btn">Token csére</button>
+      <button id="resetToken" class="reset-token-btn">Kijelentkezés</button>
     </div>
   </div>
 

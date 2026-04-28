@@ -2,17 +2,18 @@
 // Új arch: token kezelés + webes dashboard link
 (async function() {
 
-  // === TOKEN KEZELÉS ===
-  async function checkToken() {
-    const res = await chrome.runtime.sendMessage({ type: 'GET_TOKEN_STATUS' });
-    return res && res.hasToken;
+  // === BEJELENTKEZÉS KEZELÉS ===
+  async function checkAuth() {
+    const res = await chrome.runtime.sendMessage({ type: 'GET_AUTH_STATUS' });
+    return res && res.isLoggedIn;
   }
 
   async function init() {
-    const hasToken = await checkToken();
-    if (!hasToken) {
+    const isLoggedIn = await checkAuth();
+    if (!isLoggedIn) {
       document.getElementById('tokenPanel').style.display = 'block';
       document.getElementById('statusPanel').style.display = 'none';
+      document.getElementById('loginError').style.display = 'none';
     } else {
       document.getElementById('tokenPanel').style.display = 'none';
       document.getElementById('statusPanel').style.display = 'block';
@@ -21,20 +22,35 @@
   }
 
   document.getElementById('saveToken').addEventListener('click', async () => {
-    const token = document.getElementById('tokenInput').value.trim();
-    if (!token) return;
-    const res = await chrome.runtime.sendMessage({ type: 'SET_TOKEN', token });
+    const username = document.getElementById('usernameInput').value.trim();
+    const password = document.getElementById('passwordInput').value.trim();
+    if (!username || !password) return;
+    
+    const btn = document.getElementById('saveToken');
+    btn.textContent = 'Betöltés...';
+    btn.disabled = true;
+
+    const res = await chrome.runtime.sendMessage({ type: 'LOGIN', username, password });
+    
+    btn.textContent = 'Bejelentkezés';
+    btn.disabled = false;
+
     if (res && res.success) {
+      document.getElementById('loginError').style.display = 'none';
       init(); // Újraindul a panel
+    } else {
+      const errEl = document.getElementById('loginError');
+      errEl.textContent = res.error || 'Hibás bejelentkezési adatok!';
+      errEl.style.display = 'block';
     }
   });
 
-  document.getElementById('tokenInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') document.getElementById('saveToken').click();
-  });
+  const onEnter = e => { if (e.key === 'Enter') document.getElementById('saveToken').click(); };
+  document.getElementById('usernameInput').addEventListener('keydown', onEnter);
+  document.getElementById('passwordInput').addEventListener('keydown', onEnter);
 
   document.getElementById('resetToken').addEventListener('click', async () => {
-    await chrome.storage.local.remove(['oni_api_token']);
+    await chrome.runtime.sendMessage({ type: 'LOGOUT' });
     init();
   });
 

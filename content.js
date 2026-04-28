@@ -100,8 +100,8 @@
         } else if (result && result.queued) {
           currentSyncText = '⏳ Offline sorba állítva';
           currentSyncColor = '#fbbf24';
-        } else if (result && result.error === 'no_token') {
-          currentSyncText = '⚠ API token hiányzik! Popup → Beállítás';
+        } else if (result && result.error === 'no_auth') {
+          currentSyncText = '⚠ Bejelentkezés szükséges! (Popup)';
           currentSyncColor = '#f87171';
         } else {
           currentSyncText = 'Elmentve lokálisan';

@@ -1,22 +1,49 @@
 // Cloudflare Pages Function: GET/POST /api/sync
-// Extension -> Cloudflare D1
+// Extension -> Cloudflare D1 (Auth via Basic Auth / Username + Password)
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Oni-Token',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Oni-Token',
 };
 
 export async function onRequestOptions() {
   return new Response(null, { status: 204, headers: CORS });
 }
 
-export async function onRequestGet({ request, env }) {
-  const token = request.headers.get('X-Oni-Token');
-  const validToken = env.EXTENSION_API_TOKEN;
+function verifyAuth(request, env) {
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Basic ')) return false;
 
-  if (!validToken) return Response.json({ error: 'EXTENSION_API_TOKEN nincs beállítva' }, { status: 500, headers: CORS });
-  if (!token || token !== validToken) return Response.json({ error: 'Unauthorized' }, { status: 401, headers: CORS });
+  const base64Credentials = authHeader.split(' ')[1];
+  let credentials;
+  try {
+    credentials = atob(base64Credentials);
+  } catch {
+    return false;
+  }
+
+  const [username, password] = credentials.split(':');
+
+  let users = [];
+  if (env.USERS_JSON) {
+    try { users = JSON.parse(env.USERS_JSON); } catch { users = []; }
+  }
+  if (users.length === 0 && env.ADMIN_USERNAME && env.ADMIN_PASSWORD) {
+    users = [{ username: env.ADMIN_USERNAME, password: env.ADMIN_PASSWORD, role: 'superadmin' }];
+  }
+  if (users.length === 0) {
+    users = [{ username: 'admin', password: 'admin', role: 'superadmin' }];
+  }
+
+  const user = users.find(u => u.username === username && u.password === password);
+  return !!user;
+}
+
+export async function onRequestGet({ request, env }) {
+  if (!verifyAuth(request, env)) {
+    return Response.json({ error: 'Unauthorized (Hibás jelszó vagy felhasználónév)' }, { status: 401, headers: CORS });
+  }
 
   const url = new URL(request.url);
   const show_id = url.searchParams.get('show_id');
@@ -44,11 +71,9 @@ export async function onRequestGet({ request, env }) {
 }
 
 export async function onRequestPost({ request, env }) {
-  const token = request.headers.get('X-Oni-Token');
-  const validToken = env.EXTENSION_API_TOKEN;
-
-  if (!validToken) return Response.json({ error: 'EXTENSION_API_TOKEN nincs beállítva' }, { status: 500, headers: CORS });
-  if (!token || token !== validToken) return Response.json({ error: 'Unauthorized' }, { status: 401, headers: CORS });
+  if (!verifyAuth(request, env)) {
+    return Response.json({ error: 'Unauthorized (Hibás jelszó vagy felhasználónév)' }, { status: 401, headers: CORS });
+  }
 
   let body;
   try { body = await request.json(); } catch { return Response.json({ error: 'Invalid JSON' }, { status: 400, headers: CORS }); }
