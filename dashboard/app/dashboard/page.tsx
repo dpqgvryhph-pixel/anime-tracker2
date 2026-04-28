@@ -115,14 +115,19 @@ export default function DashboardPage() {
             {/* Live Sync Status */}
             <div
               className="flex items-center gap-2 px-3 py-1.5 rounded-full"
-              style={{ background: 'color-mix(in srgb, var(--t-accent) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--t-accent) 30%, transparent)' }}
-              title={lastSync ? `Utolsó szinkronizáció: ${lastSync.toLocaleTimeString()}` : 'Várakozás...'}
+              style={{
+                background: error ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)',
+                border: error ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(34, 197, 94, 0.3)',
+              }}
+              title={error ? 'Hiba a szinkronizáció során' : lastSync ? `Utolsó szinkronizáció: ${lastSync.toLocaleTimeString()}` : 'Várakozás...'}
             >
               <div className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: 'var(--t-accent)' }}></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ background: 'var(--t-accent)' }}></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: error ? '#ef4444' : '#22c55e' }}></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ background: error ? '#ef4444' : '#22c55e' }}></span>
               </div>
-              <span className="text-xs font-semibold tracking-wide uppercase" style={{ color: 'var(--t-accent)' }}>Live Sync</span>
+              <span className="text-xs font-semibold tracking-wide uppercase" style={{ color: error ? '#ef4444' : '#22c55e' }}>
+                {error ? 'Sync Error' : 'Live Sync'}
+              </span>
             </div>
 
             <div className="flex items-center gap-2">
