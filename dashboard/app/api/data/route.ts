@@ -1,5 +1,6 @@
 export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
+import { getRequestContext } from '@cloudflare/next-on-pages';
 
 export async function GET(req: NextRequest) {
   const cookieHeader = req.headers.get('Cookie') || '';
@@ -11,21 +12,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!SUPABASE_URL || !SUPABASE_KEY) {
-    return NextResponse.json({ error: 'Supabase nincs konfigurálva' }, { status: 500 });
-  }
+  try {
+    const env = getRequestContext().env as any;
+    if (!env || !env.DB) {
+      return NextResponse.json({ error: 'Cloudflare D1 adatbázis (DB) nincs csatolva' }, { status: 500 });
+    }
 
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/watched_episodes?select=*&order=last_watched.desc`,
-    { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
-  );
-  const text = await res.text();
-  let data: any;
-  try { data = JSON.parse(text); } catch { data = []; }
-  if (!res.ok) {
-    return NextResponse.json({ error: 'Supabase hiba', detail: data }, { status: 500 });
+    const { results } = await env.DB.prepare(
+      'SELECT * FROM watched_episodes ORDER BY last_watched DESC'
+    ).all();
+
+    return NextResponse.json({ data: results || [] });
+  } catch (err: any) {
+    return NextResponse.json({ error: 'D1 hiba', detail: err.message }, { status: 500 });
   }
-  return NextResponse.json({ data });
 }

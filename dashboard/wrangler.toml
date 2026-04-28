@@ -2,3 +2,8 @@
 name = "onianime-tracker2"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "anime_db"
+database_id = "14c9495d-3d61-4008-ad7f-8a4a49210251"

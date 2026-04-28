@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS watched_episodes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  show_id INTEGER NOT NULL,
+  episode INTEGER NOT NULL,
+  anime_title TEXT,
+  watched_count INTEGER DEFAULT 1,
+  duration_minutes INTEGER DEFAULT 24,
+  first_watched DATETIME DEFAULT CURRENT_TIMESTAMP,
+  last_watched DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(show_id, episode)
+);
+
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL UNIQUE,
+  display_name TEXT,
+  role TEXT NOT NULL DEFAULT 'viewer',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  last_login DATETIME
+);

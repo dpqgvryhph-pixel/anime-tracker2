@@ -1,5 +1,5 @@
 // Cloudflare Pages Function: GET /api/data
-// Dashboard adatok lekérése Supabase-ből
+// Dashboard adatok lekérése D1-ből
 
 export async function onRequestGet({ request, env }) {
   // Auth ellenőrzés cookie alapján
@@ -13,30 +13,17 @@ export async function onRequestGet({ request, env }) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const SUPABASE_URL = env.SUPABASE_URL;
-  const SUPABASE_KEY = env.SUPABASE_ANON_KEY || env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!SUPABASE_URL || !SUPABASE_KEY) {
-    return Response.json({ error: 'Supabase nincs konfigurálva' }, { status: 500 });
+  if (!env.DB) {
+    return Response.json({ error: 'Cloudflare D1 nincs csatolva' }, { status: 500 });
   }
 
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/watched_episodes?select=*&order=last_watched.desc`,
-    {
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-      },
-    }
-  );
+  try {
+    const { results } = await env.DB.prepare(
+      'SELECT * FROM watched_episodes ORDER BY last_watched DESC'
+    ).all();
 
-  const text = await res.text();
-  let data;
-  try { data = JSON.parse(text); } catch { data = []; }
-
-  if (!res.ok) {
-    return Response.json({ error: 'Supabase hiba', detail: data }, { status: 500 });
+    return Response.json({ data: results || [] });
+  } catch (err) {
+    return Response.json({ error: 'D1 hiba', detail: err.message }, { status: 500 });
   }
-
-  return Response.json({ data });
 }

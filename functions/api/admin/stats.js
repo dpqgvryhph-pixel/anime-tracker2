@@ -23,37 +23,28 @@ export async function onRequestGet({ request, env }) {
     return Response.json({ error: 'Unauthorized' }, { status: 401, headers: CORS });
   }
 
-  const SUPABASE_URL = env.SUPABASE_URL;
-  const SUPABASE_KEY = env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY;
-
-  if (!SUPABASE_URL || !SUPABASE_KEY) {
-    return Response.json({ error: 'Supabase nincs konfigurálva' }, { status: 500, headers: CORS });
+  if (!env.DB) {
+    return Response.json({ error: 'Cloudflare D1 nincs csatolva (DB)' }, { status: 500, headers: CORS });
   }
 
-  const [episodesRes, usersRes] = await Promise.all([
-    fetch(`${SUPABASE_URL}/rest/v1/watched_episodes?select=watched_count`, {
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
-    }),
-    fetch(`${SUPABASE_URL}/rest/v1/users?select=id`, {
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
-    }),
-  ]);
+  try {
+    const episodesRes = await env.DB.prepare('SELECT watched_count FROM watched_episodes').all();
+    const usersRes = await env.DB.prepare('SELECT id FROM users').all();
 
-  let episodes = [];
-  let users = [];
-  try { episodes = await episodesRes.json(); } catch {}
-  try { users = await usersRes.json(); } catch {}
+    const episodes = episodesRes.results || [];
+    const users = usersRes.results || [];
 
-  const totalEpisodes = Array.isArray(episodes) ? episodes.length : 0;
-  const totalUsers = Array.isArray(users) ? users.length : 0;
-  const totalWatched = Array.isArray(episodes)
-    ? episodes.reduce((sum, row) => sum + (row.watched_count || 0), 0)
-    : 0;
+    const totalEpisodes = episodes.length;
+    const totalUsers = users.length;
+    const totalWatched = episodes.reduce((sum, row) => sum + (row.watched_count || 0), 0);
 
-  return Response.json({
-    totalEpisodes,
-    totalUsers,
-    totalWatched,
-    lastUpdated: new Date().toISOString(),
-  }, { headers: CORS });
+    return Response.json({
+      totalEpisodes,
+      totalUsers,
+      totalWatched,
+      lastUpdated: new Date().toISOString(),
+    }, { headers: CORS });
+  } catch (err) {
+    return Response.json({ error: 'D1 hiba', detail: err.message }, { status: 500, headers: CORS });
+  }
 }
