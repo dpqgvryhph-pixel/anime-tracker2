@@ -42,7 +42,7 @@ export default function AdminPage() {
       if (usersRes.status === 401 || statsRes.status === 401) { router.push('/'); return; }
       const usersData = await usersRes.json();
       const statsData = await statsRes.json();
-              if (usersData.users) setUsers(usersData.users);
+      if (usersData.users) setUsers(usersData.users);
       if (!statsData.error) setStats(statsData);
     } catch { setError('Adatok betöltése sikertelen'); }
     finally { setLoading(false); }
@@ -59,7 +59,7 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (res.ok) {
-                  setCreateSuccess(`✓ Létrehozva: ${data.user.username}`);
+        setCreateSuccess(`✓ Létrehozva: ${data.user.username}`);
         setNewUsername(''); setNewDisplayName('');
         loadData();
       } else { setCreateError(data.error || 'Hiba történt'); }
@@ -73,9 +73,9 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen px-4 py-8 relative">
+    <div className="min-h-screen px-4 py-8 relative" style={{ background: 'var(--t-bg)', color: 'var(--t-text)' }}>
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(circle, rgba(255,107,53,0.04) 0%, transparent 70%)' }} />
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--t-accent) 4%, transparent) 0%, transparent 70%)' }} />
       </div>
 
       <div className={`max-w-5xl mx-auto transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
@@ -83,19 +83,28 @@ export default function AdminPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <div className="mb-1"><button onClick={() => router.push('/dashboard')} className="text-oni-dim hover:text-oni-text text-sm transition-colors">← Dashboard</button></div>
-            <h1 className="font-display text-2xl tracking-widest text-white">ADMIN FELÜLET</h1>
-            <p className="text-oni-dim text-xs tracking-wider mt-1">Felhasználók kezelése és rendszer áttekintés</p>
+            <div className="mb-1">
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="text-sm transition-colors"
+                style={{ color: 'var(--t-dim)' }}
+              >
+                ← Dashboard
+              </button>
+            </div>
+            <h1 className="font-bold text-2xl tracking-widest" style={{ color: 'var(--t-text)' }}>ADMIN FELÜLET</h1>
+            <p className="text-xs tracking-wider mt-1" style={{ color: 'var(--t-dim)' }}>Felhasználók kezelése és rendszer áttekintés</p>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push('/admin/token')}
-              className="text-xs px-3 py-1.5 rounded border border-oni-border text-oni-dim hover:text-oni-accent hover:border-oni-accent/30 transition-colors"
+              className="text-xs px-3 py-1.5 rounded-lg transition-colors"
+              style={{ border: '1px solid var(--t-border)', color: 'var(--t-dim)' }}
             >
               🔑 API Token
             </button>
-            <div className="flex items-center gap-2 text-xs text-oni-dim">
-              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--t-dim)' }}>
+              <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#22c55e' }} />
               Admin mód
             </div>
           </div>
@@ -109,10 +118,10 @@ export default function AdminPage() {
               { label: 'Összes megtekintés', value: stats.totalWatched, icon: '👁' },
               { label: 'Felhasználók', value: stats.totalUsers, icon: '👥' },
             ].map(s => (
-              <div key={s.label} className="glass-panel rounded-lg p-5 text-center">
+              <div key={s.label} className="glass-panel p-5 text-center">
                 <div className="text-2xl mb-2">{s.icon}</div>
-                <div className="font-display text-3xl text-white mb-1">{s.value.toLocaleString('hu-HU')}</div>
-                <div className="text-oni-dim text-xs tracking-wider uppercase">{s.label}</div>
+                <div className="text-3xl font-bold mb-1" style={{ color: 'var(--t-text)' }}>{s.value.toLocaleString('hu-HU')}</div>
+                <div className="text-xs tracking-wider uppercase" style={{ color: 'var(--t-dim)' }}>{s.label}</div>
               </div>
             ))}
           </div>
@@ -120,69 +129,121 @@ export default function AdminPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Új felhasználó */}
-          <div className="glass-panel rounded-lg p-6">
-            <h2 className="font-display text-sm tracking-widest text-white mb-3 uppercase">Új felhasználó</h2>
-            <p className="text-oni-dim text-xs mb-5 leading-relaxed">
-              Új felhasználók <span className="text-oni-accent">viewer</span> jogkörrel jönnek létre — csak olvasás.
+          <div className="glass-panel p-6">
+            <h2 className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: 'var(--t-text)' }}>Új felhasználó</h2>
+            <p className="text-xs mb-5 leading-relaxed" style={{ color: 'var(--t-dim)' }}>
+              Új felhasználók <span style={{ color: 'var(--t-accent)' }}>viewer</span> jogkörrel jönnek létre — csak olvasás.
             </p>
             <form onSubmit={handleCreateUser} className="space-y-4">
               <div>
-                <label className="block text-xs text-oni-dim tracking-[0.15em] uppercase mb-2">Felhasználónév *</label>
-                <input type="text" value={newUsername} onChange={e => setNewUsername(e.target.value)}
-                  className="input-oni w-full px-3 py-2.5 rounded text-oni-text text-sm" placeholder="pl. vegfelhasznalo" required minLength={2} />
+                <label className="block text-xs tracking-[0.15em] uppercase mb-2" style={{ color: 'var(--t-dim)' }}>Felhasználónév *</label>
+                <input
+                  type="text" value={newUsername}
+                  onChange={e => setNewUsername(e.target.value)}
+                  className="input-t w-full px-3 py-2.5 text-sm"
+                  placeholder="pl. vegfelhasznalo" required minLength={2}
+                />
               </div>
               <div>
-                <label className="block text-xs text-oni-dim tracking-[0.15em] uppercase mb-2">Megjelenítendő név</label>
-                <input type="text" value={newDisplayName} onChange={e => setNewDisplayName(e.target.value)}
-                  className="input-oni w-full px-3 py-2.5 rounded text-oni-text text-sm" placeholder="pl. Végfelhasználó" />
+                <label className="block text-xs tracking-[0.15em] uppercase mb-2" style={{ color: 'var(--t-dim)' }}>Megjelenítendő név</label>
+                <input
+                  type="text" value={newDisplayName}
+                  onChange={e => setNewDisplayName(e.target.value)}
+                  className="input-t w-full px-3 py-2.5 text-sm"
+                  placeholder="pl. Végfelhasználó"
+                />
               </div>
-              {createError && <div className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded px-3 py-2">✗ {createError}</div>}
-              {createSuccess && <div className="text-xs text-green-400 bg-green-400/10 border border-green-400/20 rounded px-3 py-2">{createSuccess}</div>}
-              <button type="submit" disabled={creating}
-                className="w-full py-2.5 rounded font-display tracking-widest text-white text-xs transition-all"
-                style={{ background: creating ? 'rgba(255,107,53,0.3)' : 'linear-gradient(135deg,#ff6b35,#e85d2c)', boxShadow: creating ? 'none' : '0 0 12px rgba(255,107,53,0.25)' }}>
+              {createError && (
+                <div className="text-xs rounded px-3 py-2" style={{ color: '#f87171', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                  ✗ {createError}
+                </div>
+              )}
+              {createSuccess && (
+                <div className="text-xs rounded px-3 py-2" style={{ color: '#4ade80', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)' }}>
+                  {createSuccess}
+                </div>
+              )}
+              <button
+                type="submit" disabled={creating}
+                className="w-full py-2.5 rounded-lg font-bold tracking-widest text-white text-xs transition-all"
+                style={{
+                  background: creating
+                    ? 'color-mix(in srgb, var(--t-accent) 30%, transparent)'
+                    : 'linear-gradient(135deg, var(--t-accent), color-mix(in srgb, var(--t-accent) 70%, #000))',
+                  boxShadow: creating ? 'none' : '0 0 12px color-mix(in srgb, var(--t-accent) 25%, transparent)',
+                }}
+              >
                 {creating ? 'LÉTREHOZÁS...' : '+ HOZZÁADÁS'}
               </button>
             </form>
           </div>
 
           {/* Felhasználók listája */}
-          <div className="lg:col-span-2 glass-panel rounded-lg p-6">
+          <div className="lg:col-span-2 glass-panel p-6">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="font-display text-sm tracking-widest text-white uppercase">Felhasználók</h2>
-              <button onClick={loadData} className="text-xs text-oni-dim hover:text-oni-text transition-colors px-3 py-1.5 rounded border border-oni-border">↻ Frissítés</button>
+              <h2 className="font-bold text-sm tracking-widest uppercase" style={{ color: 'var(--t-text)' }}>Felhasználók</h2>
+              <button
+                onClick={loadData}
+                className="text-xs px-3 py-1.5 rounded-lg transition-colors"
+                style={{ color: 'var(--t-dim)', border: '1px solid var(--t-border)' }}
+              >
+                ↻ Frissítés
+              </button>
             </div>
             {loading ? (
-              <div className="space-y-3">{[...Array(3)].map((_,i) => <div key={i} className="h-14 rounded bg-oni-surface-2 animate-pulse" />)}</div>
+              <div className="space-y-3">
+                {[...Array(3)].map((_,i) => (
+                  <div key={i} className="h-14 rounded-lg animate-pulse" style={{ background: 'var(--t-surface-2)' }} />
+                ))}
+              </div>
             ) : error ? (
-              <div className="text-red-400 text-sm text-center py-8">{error}</div>
+              <div className="text-sm text-center py-8" style={{ color: '#f87171' }}>{error}</div>
             ) : users.length === 0 ? (
               <div className="text-center py-10">
                 <div className="text-4xl mb-3">👤</div>
-                <p className="text-oni-dim text-sm">Még nincsenek felhasználók</p>
+                <p className="text-sm" style={{ color: 'var(--t-dim)' }}>Még nincsenek felhasználók</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {users.map(u => (
-                  <div key={u.id} className="flex items-center justify-between p-3.5 rounded border border-oni-border bg-oni-surface-2/50 hover:bg-oni-surface-2 transition-colors">
+                  <div
+                    key={u.id}
+                    className="flex items-center justify-between p-3.5 rounded-lg transition-colors"
+                    style={{ border: '1px solid var(--t-border)', background: 'var(--t-surface-2)' }}
+                  >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
-                        style={{ background: u.role==='admin'?'rgba(255,107,53,0.2)':'rgba(148,163,184,0.1)', color: u.role==='admin'?'#ff6b35':'#94a3b8' }}>
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                        style={{
+                          background: u.role === 'admin'
+                            ? 'color-mix(in srgb, var(--t-accent) 20%, transparent)'
+                            : 'rgba(148,163,184,0.1)',
+                          color: u.role === 'admin' ? 'var(--t-accent)' : '#94a3b8',
+                        }}
+                      >
                         {u.display_name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div className="text-oni-text text-sm font-medium">{u.display_name}</div>
-                        <div className="text-oni-muted text-xs">@{u.username}</div>
+                        <div className="text-sm font-medium" style={{ color: 'var(--t-text)' }}>{u.display_name}</div>
+                        <div className="text-xs" style={{ color: 'var(--t-muted)' }}>@{u.username}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right hidden sm:block">
-                        <div className="text-oni-muted text-xs">Utolsó belépés</div>
-                        <div className="text-oni-dim text-xs">{formatDate(u.last_login)}</div>
+                        <div className="text-xs" style={{ color: 'var(--t-muted)' }}>Utolsó belépés</div>
+                        <div className="text-xs" style={{ color: 'var(--t-dim)' }}>{formatDate(u.last_login)}</div>
                       </div>
-                      <span className="text-xs px-2.5 py-1 rounded-full font-medium"
-                        style={{ background: u.role==='admin'?'rgba(255,107,53,0.15)':'rgba(148,163,184,0.1)', color: u.role==='admin'?'#ff6b35':'#94a3b8', border: `1px solid ${u.role==='admin'?'rgba(255,107,53,0.3)':'rgba(148,163,184,0.2)'}` }}>
-                        {u.role==='admin'?'⚡ Admin':'👁 Viewer'}
+                      <span
+                        className="text-xs px-2.5 py-1 rounded-full font-medium"
+                        style={{
+                          background: u.role === 'admin'
+                            ? 'color-mix(in srgb, var(--t-accent) 15%, transparent)'
+                            : 'rgba(148,163,184,0.1)',
+                          color: u.role === 'admin' ? 'var(--t-accent)' : '#94a3b8',
+                          border: `1px solid ${u.role === 'admin' ? 'color-mix(in srgb, var(--t-accent) 30%, transparent)' : 'rgba(148,163,184,0.2)'}`,
+                        }}
+                      >
+                        {u.role === 'admin' ? '⚡ Admin' : '👁 Viewer'}
                       </span>
                     </div>
                   </div>
@@ -193,18 +254,22 @@ export default function AdminPage() {
         </div>
 
         {/* Jogkörök */}
-        <div className="mt-6 glass-panel rounded-lg p-5">
-          <h3 className="font-display text-xs tracking-widest text-white uppercase mb-4">Jogkörök</h3>
+        <div className="mt-6 glass-panel p-5">
+          <h3 className="font-bold text-xs tracking-widest uppercase mb-4" style={{ color: 'var(--t-text)' }}>Jogkörök</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex gap-3">
               <span>⚡</span>
-              <div><div className="text-xs font-medium text-oni-text mb-1">Admin</div>
-                <div className="text-xs text-oni-muted leading-relaxed">Teljes hozzáférés: adatok, felhasználók, API token, admin felület.</div></div>
+              <div>
+                <div className="text-xs font-medium mb-1" style={{ color: 'var(--t-text)' }}>Admin</div>
+                <div className="text-xs leading-relaxed" style={{ color: 'var(--t-muted)' }}>Teljes hozzáférés: adatok, felhasználók, API token, admin felület.</div>
+              </div>
             </div>
             <div className="flex gap-3">
               <span>👁</span>
-              <div><div className="text-xs font-medium text-oni-text mb-1">Viewer (csak megtekintés)</div>
-                <div className="text-xs text-oni-muted leading-relaxed">Látja az anime listát, nem módosíthat, nem érhet el admin funkciókat.</div></div>
+              <div>
+                <div className="text-xs font-medium mb-1" style={{ color: 'var(--t-text)' }}>Viewer (csak megtekintés)</div>
+                <div className="text-xs leading-relaxed" style={{ color: 'var(--t-muted)' }}>Látja az anime listát, nem módosíthat, nem érhet el admin funkciókat.</div>
+              </div>
             </div>
           </div>
         </div>

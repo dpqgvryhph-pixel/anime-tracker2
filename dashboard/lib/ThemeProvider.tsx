@@ -18,6 +18,10 @@ interface ThemeContextType {
   setCardOpacity: (o: number) => void;
   borderRadius: number;
   setBorderRadius: (r: number) => void;
+  // Track which properties have been manually overridden
+  overrides: Set<string>;
+  resetOverride: (key: string) => void;
+  resetAllOverrides: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
@@ -35,7 +39,25 @@ const ThemeContext = createContext<ThemeContextType>({
   setCardOpacity: () => {},
   borderRadius: 6,
   setBorderRadius: () => {},
+  overrides: new Set(),
+  resetOverride: () => {},
+  resetAllOverrides: () => {},
 });
+
+// Default values per theme (mirrors globals.css)
+const THEME_DEFAULTS: Record<Theme, {
+  accentColor: string;
+  fontFamily: string;
+  glassBlur: number;
+  cardOpacity: number;
+  borderRadius: number;
+}> = {
+  dark:   { accentColor: '#ff6b35', fontFamily: 'Inter, sans-serif', glassBlur: 12, cardOpacity: 0.9, borderRadius: 6 },
+  modern: { accentColor: '#6366f1', fontFamily: 'Inter, sans-serif', glassBlur: 20, cardOpacity: 0.07, borderRadius: 16 },
+  win95:  { accentColor: '#000080', fontFamily: "'Courier New', monospace", glassBlur: 0, cardOpacity: 1, borderRadius: 0 },
+  ps1:    { accentColor: '#00ffff', fontFamily: "'Courier New', monospace", glassBlur: 0, cardOpacity: 0.9, borderRadius: 0 },
+  custom: { accentColor: '#ff6b35', fontFamily: 'Inter, sans-serif', glassBlur: 12, cardOpacity: 0.9, borderRadius: 6 },
+};
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('dark');
@@ -45,29 +67,48 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [glassBlur, setGlassBlurState] = useState(12);
   const [cardOpacity, setCardOpacityState] = useState(0.9);
   const [borderRadius, setBorderRadiusState] = useState(6);
+  const [overrides, setOverrides] = useState<Set<string>>(new Set());
 
+  // Load all saved settings from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('tracker-theme') as Theme;
-    if (saved) setThemeState(saved);
+    const savedTheme: Theme = saved || 'dark';
+    setThemeState(savedTheme);
+
     const savedBg = localStorage.getItem('tracker-bg') || '';
     setBgImageState(savedBg);
-    const savedAccent = localStorage.getItem('tracker-accent') || '#ff6b35';
-    setAccentColorState(savedAccent);
+
+    // Load saved overrides set
+    const savedOverridesJson = localStorage.getItem('tracker-overrides');
+    const savedOverrides: string[] = savedOverridesJson ? JSON.parse(savedOverridesJson) : [];
+    setOverrides(new Set(savedOverrides));
+
+    const defaults = THEME_DEFAULTS[savedTheme];
+
+    // Only load saved values if they were explicitly overridden
+    const savedAccent = localStorage.getItem('tracker-accent');
+    setAccentColorState(savedAccent || defaults.accentColor);
+
     const savedFont = localStorage.getItem('tracker-font');
-    if (savedFont) setFontFamilyState(savedFont);
+    setFontFamilyState(savedFont || defaults.fontFamily);
+
     const savedBlur = localStorage.getItem('tracker-blur');
-    if (savedBlur) setGlassBlurState(Number(savedBlur));
+    setGlassBlurState(savedBlur !== null ? Number(savedBlur) : defaults.glassBlur);
+
     const savedOpacity = localStorage.getItem('tracker-opacity');
-    if (savedOpacity) setCardOpacityState(Number(savedOpacity));
+    setCardOpacityState(savedOpacity !== null ? Number(savedOpacity) : defaults.cardOpacity);
+
     const savedRadius = localStorage.getItem('tracker-radius');
-    if (savedRadius) setBorderRadiusState(Number(savedRadius));
+    setBorderRadiusState(savedRadius !== null ? Number(savedRadius) : defaults.borderRadius);
   }, []);
 
+  // Apply theme attribute
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('tracker-theme', theme);
   }, [theme]);
 
+  // Apply background image
   useEffect(() => {
     if (bgImage) {
       document.body.style.backgroundImage = `url(${bgImage})`;
@@ -80,41 +121,109 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('tracker-bg', bgImage);
   }, [bgImage]);
 
+  // Apply accent color (always)
   useEffect(() => {
     document.documentElement.style.setProperty('--t-accent', accentColor);
     localStorage.setItem('tracker-accent', accentColor);
   }, [accentColor]);
 
+  // Apply advanced settings (blur, opacity, radius, font) always — not just for 'custom'
   useEffect(() => {
-    if (theme === 'custom') {
-      document.documentElement.style.setProperty('--t-font', fontFamily);
-      document.documentElement.style.setProperty('--t-blur', `${glassBlur}px`);
-      document.documentElement.style.setProperty('--t-card-opacity', `${cardOpacity}`);
-      document.documentElement.style.setProperty('--t-radius', `${borderRadius}px`);
-    } else {
-      document.documentElement.style.removeProperty('--t-font');
-      document.documentElement.style.removeProperty('--t-blur');
-      document.documentElement.style.removeProperty('--t-card-opacity');
-      document.documentElement.style.removeProperty('--t-radius');
-    }
+    document.documentElement.style.setProperty('--t-font', fontFamily);
+    document.documentElement.style.setProperty('--t-blur', `${glassBlur}px`);
+    document.documentElement.style.setProperty('--t-card-opacity', `${cardOpacity}`);
+    document.documentElement.style.setProperty('--t-radius', `${borderRadius}px`);
+
     localStorage.setItem('tracker-font', fontFamily);
     localStorage.setItem('tracker-blur', String(glassBlur));
     localStorage.setItem('tracker-opacity', String(cardOpacity));
     localStorage.setItem('tracker-radius', String(borderRadius));
-  }, [fontFamily, glassBlur, cardOpacity, borderRadius, theme]);
+  }, [fontFamily, glassBlur, cardOpacity, borderRadius]);
 
-  const setTheme = (t: Theme) => setThemeState(t);
+  const setTheme = (t: Theme) => {
+    setThemeState(t);
+    // When switching themes, apply theme defaults for non-overridden properties
+    const defaults = THEME_DEFAULTS[t];
+    if (!overrides.has('accent')) setAccentColorState(defaults.accentColor);
+    if (!overrides.has('font')) setFontFamilyState(defaults.fontFamily);
+    if (!overrides.has('blur')) setGlassBlurState(defaults.glassBlur);
+    if (!overrides.has('opacity')) setCardOpacityState(defaults.cardOpacity);
+    if (!overrides.has('radius')) setBorderRadiusState(defaults.borderRadius);
+  };
+
   const setBgImage = (url: string) => setBgImageState(url);
-  const setAccentColor = (c: string) => setAccentColorState(c);
-  const setFontFamily = (f: string) => setFontFamilyState(f);
-  const setGlassBlur = (b: number) => setGlassBlurState(b);
-  const setCardOpacity = (o: number) => setCardOpacityState(o);
-  const setBorderRadius = (r: number) => setBorderRadiusState(r);
+
+  const setAccentColor = (c: string) => {
+    setAccentColorState(c);
+    addOverride('accent');
+  };
+
+  const setFontFamily = (f: string) => {
+    setFontFamilyState(f);
+    addOverride('font');
+  };
+
+  const setGlassBlur = (b: number) => {
+    setGlassBlurState(b);
+    addOverride('blur');
+  };
+
+  const setCardOpacity = (o: number) => {
+    setCardOpacityState(o);
+    addOverride('opacity');
+  };
+
+  const setBorderRadius = (r: number) => {
+    setBorderRadiusState(r);
+    addOverride('radius');
+  };
+
+  const addOverride = (key: string) => {
+    setOverrides(prev => {
+      const next = new Set(prev);
+      next.add(key);
+      localStorage.setItem('tracker-overrides', JSON.stringify([...next]));
+      return next;
+    });
+  };
+
+  const resetOverride = (key: string) => {
+    setOverrides(prev => {
+      const next = new Set(prev);
+      next.delete(key);
+      localStorage.setItem('tracker-overrides', JSON.stringify([...next]));
+      return next;
+    });
+    // Reset to theme default
+    const defaults = THEME_DEFAULTS[theme];
+    if (key === 'accent') { setAccentColorState(defaults.accentColor); localStorage.removeItem('tracker-accent'); }
+    if (key === 'font') { setFontFamilyState(defaults.fontFamily); localStorage.removeItem('tracker-font'); }
+    if (key === 'blur') { setGlassBlurState(defaults.glassBlur); localStorage.removeItem('tracker-blur'); }
+    if (key === 'opacity') { setCardOpacityState(defaults.cardOpacity); localStorage.removeItem('tracker-opacity'); }
+    if (key === 'radius') { setBorderRadiusState(defaults.borderRadius); localStorage.removeItem('tracker-radius'); }
+  };
+
+  const resetAllOverrides = () => {
+    setOverrides(new Set());
+    localStorage.removeItem('tracker-overrides');
+    localStorage.removeItem('tracker-accent');
+    localStorage.removeItem('tracker-font');
+    localStorage.removeItem('tracker-blur');
+    localStorage.removeItem('tracker-opacity');
+    localStorage.removeItem('tracker-radius');
+    const defaults = THEME_DEFAULTS[theme];
+    setAccentColorState(defaults.accentColor);
+    setFontFamilyState(defaults.fontFamily);
+    setGlassBlurState(defaults.glassBlur);
+    setCardOpacityState(defaults.cardOpacity);
+    setBorderRadiusState(defaults.borderRadius);
+  };
 
   return (
     <ThemeContext.Provider value={{ 
       theme, setTheme, bgImage, setBgImage, accentColor, setAccentColor,
-      fontFamily, setFontFamily, glassBlur, setGlassBlur, cardOpacity, setCardOpacity, borderRadius, setBorderRadius
+      fontFamily, setFontFamily, glassBlur, setGlassBlur, cardOpacity, setCardOpacity,
+      borderRadius, setBorderRadius, overrides, resetOverride, resetAllOverrides
     }}>
       {children}
     </ThemeContext.Provider>

@@ -19,9 +19,11 @@
   --t-muted: #475569;
   --t-font: 'Inter', sans-serif;
   --t-radius: 6px;
+  --t-blur: 12px;
+  --t-card-opacity: 0.9;
   --t-shadow: 0 4px 24px rgba(0,0,0,0.5);
   --t-header-bg: rgba(10,9,8,0.85);
-  --t-card-bg: rgba(17,16,16,0.9);
+  --t-card-bg: rgba(17,16,16, var(--t-card-opacity, 0.9));
   --t-input-bg: rgba(255,255,255,0.04);
   --t-scanline: 0;
   --t-win-border: none;
@@ -40,6 +42,8 @@
   --t-muted: #808080;
   --t-font: 'Courier New', monospace;
   --t-radius: 0px;
+  --t-blur: 0px;
+  --t-card-opacity: 1;
   --t-shadow: 2px 2px 0 #000, inset 1px 1px 0 #fff, inset -1px -1px 0 #808080;
   --t-header-bg: #000080;
   --t-card-bg: #c0c0c0;
@@ -61,9 +65,11 @@
   --t-muted: #5050aa;
   --t-font: 'Courier New', monospace;
   --t-radius: 0px;
+  --t-blur: 0px;
+  --t-card-opacity: 0.9;
   --t-shadow: 0 0 12px rgba(0,255,255,0.4), 0 0 30px rgba(255,0,255,0.2);
   --t-header-bg: rgba(13,2,33,0.95);
-  --t-card-bg: rgba(21,10,53,0.9);
+  --t-card-bg: rgba(21,10,53, var(--t-card-opacity, 0.9));
   --t-input-bg: rgba(0,255,255,0.05);
   --t-scanline: 1;
   --t-win-border: none;
@@ -82,9 +88,11 @@
   --t-muted: #475569;
   --t-font: 'Inter', sans-serif;
   --t-radius: 16px;
+  --t-blur: 20px;
+  --t-card-opacity: 0.07;
   --t-shadow: 0 8px 32px rgba(99,102,241,0.15);
   --t-header-bg: rgba(15,23,42,0.7);
-  --t-card-bg: rgba(255,255,255,0.07);
+  --t-card-bg: rgba(255,255,255, var(--t-card-opacity, 0.07));
   --t-input-bg: rgba(255,255,255,0.06);
   --t-scanline: 0;
   --t-win-border: none;
@@ -96,11 +104,12 @@
   --t-surface: rgba(255,255,255,0.05);
   --t-surface-2: rgba(255,255,255,0.1);
   --t-border: rgba(255,255,255,0.1);
-  /* Accent comes from JS */
+  /* Accent, font, blur, radius, card-opacity all come from JS */
   --t-text: #ffffff;
   --t-dim: #a1a1aa;
   --t-muted: #52525b;
-  /* Font, radius, card-opacity blur comes from JS */
+  --t-blur: 12px;
+  --t-card-opacity: 0.9;
   --t-shadow: 0 8px 32px rgba(0,0,0,0.5);
   --t-header-bg: rgba(0,0,0,0.5);
   --t-card-bg: rgba(20,20,20, var(--t-card-opacity, 0.9));
@@ -194,10 +203,9 @@ body.scanlines::before {
   box-shadow: 0 0 0 1px var(--t-accent), 0 0 20px rgba(0,255,255,0.15);
 }
 
-/* Modern blur/glow */
+/* Modern blur/glow — blur value comes from --t-blur set by JS */
 [data-theme="modern"] .glass-panel {
-  backdrop-filter: blur(20px);
-  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(var(--t-blur, 20px));
 }
 
 /* Regi oni- stilus aliasok - visszafele kompatibilitas */
