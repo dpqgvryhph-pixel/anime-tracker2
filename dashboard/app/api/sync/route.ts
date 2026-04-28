@@ -5,20 +5,50 @@ import { getRequestContext } from '@cloudflare/next-on-pages';
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Oni-Token',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Oni-Token',
 };
 
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS });
 }
 
+function verifyAuth(req: NextRequest, env: any) {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Basic ')) return false;
+
+  const base64Credentials = authHeader.split(' ')[1];
+  let credentials;
+  try {
+    credentials = atob(base64Credentials);
+  } catch {
+    return false;
+  }
+
+  const [username, password] = credentials.split(':');
+
+  let users: any[] = [];
+  if (env.USERS_JSON) {
+    try { users = JSON.parse(env.USERS_JSON); } catch { users = []; }
+  }
+  const fallbackUsername = process.env.ADMIN_USERNAME || env.ADMIN_USERNAME;
+  const fallbackPassword = process.env.ADMIN_PASSWORD || env.ADMIN_PASSWORD;
+
+  if (users.length === 0 && fallbackUsername && fallbackPassword) {
+    users = [{ username: fallbackUsername, password: fallbackPassword, role: 'superadmin' }];
+  }
+  if (users.length === 0) {
+    users = [{ username: 'admin', password: 'admin', role: 'superadmin' }];
+  }
+
+  const user = users.find(u => u.username === username && u.password === password);
+  return !!user;
+}
+
 export async function GET(req: NextRequest) {
-  const token = req.headers.get('X-Oni-Token');
   const env = getRequestContext().env as any;
-  const validToken = process.env.EXTENSION_API_TOKEN || env.EXTENSION_API_TOKEN;
-  
-  if (!validToken) return NextResponse.json({ error: 'EXTENSION_API_TOKEN nincs beállítva' }, { status: 500, headers: CORS });
-  if (!token || token !== validToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: CORS });
+  if (!verifyAuth(req, env)) {
+    return NextResponse.json({ error: 'Unauthorized (Hibás jelszó vagy felhasználónév)' }, { status: 401, headers: CORS });
+  }
 
   const url = new URL(req.url);
   const show_id = url.searchParams.get('show_id');
@@ -48,12 +78,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const token = req.headers.get('X-Oni-Token');
   const env = getRequestContext().env as any;
-  const validToken = process.env.EXTENSION_API_TOKEN || env.EXTENSION_API_TOKEN;
-  
-  if (!validToken) return NextResponse.json({ error: 'EXTENSION_API_TOKEN nincs beállítva' }, { status: 500, headers: CORS });
-  if (!token || token !== validToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: CORS });
+  if (!verifyAuth(req, env)) {
+    return NextResponse.json({ error: 'Unauthorized (Hibás jelszó vagy felhasználónév)' }, { status: 401, headers: CORS });
+  }
 
   let body: any;
   try { body = await req.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400, headers: CORS }); }
@@ -70,7 +98,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Cloudflare D1 adatbázis nincs csatolva' }, { status: 500, headers: CORS });
     }
 
-    // Insert or update logic for D1
     const existing = await env.DB.prepare(
       'SELECT id, watched_count FROM watched_episodes WHERE show_id = ? AND episode = ?'
     ).bind(show_id, episode).first();
